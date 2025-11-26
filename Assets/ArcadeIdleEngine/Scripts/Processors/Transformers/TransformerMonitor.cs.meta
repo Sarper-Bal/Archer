@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 4ce74c1128cb4bf6bc0dbd546a103607
+timeCreated: 1664007638
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Processors/Transformers/TransformerMonitor.cs
+  uploadId: 748846

@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: ba96ddb405f8428dbf45b54ff709fc9b
+timeCreated: 1663674933
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Pools/ObjectPool.cs
+  uploadId: 748846

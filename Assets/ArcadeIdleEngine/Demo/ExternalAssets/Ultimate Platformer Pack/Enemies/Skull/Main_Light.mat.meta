@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: abcff62c8f2374e4a89b5b2cfd9e056a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/Ultimate Platformer Pack/Enemies/Skull/Main_Light.mat
+  uploadId: 748846

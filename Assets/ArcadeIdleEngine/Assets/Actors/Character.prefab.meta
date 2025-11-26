@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5f99486e7cd8b4bab9962635825fc22c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Actors/Character.prefab
+  uploadId: 748846

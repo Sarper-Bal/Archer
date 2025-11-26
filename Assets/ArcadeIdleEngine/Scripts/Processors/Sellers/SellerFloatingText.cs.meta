@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 6cfbd8bf6a6d47bca26feabfd6354bce
+timeCreated: 1664289786
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Processors/Sellers/SellerFloatingText.cs
+  uploadId: 748846

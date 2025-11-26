@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 11af16c47b2b94cafb29422e071cd417
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Transformers/Definitions/Advanced Transformer.asset
+  uploadId: 748846

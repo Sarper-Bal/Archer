@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 31d1b86c5bc4c43af994ec2039279aaa
+labels:
+- Pickable
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Items/Prefabs/Sample Game/Gathered Item
+    Stone.prefab
+  uploadId: 748846

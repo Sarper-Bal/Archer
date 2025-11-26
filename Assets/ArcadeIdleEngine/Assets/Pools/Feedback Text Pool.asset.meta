@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0244ed65dd9b14a2da98ab3e96f0df34
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Pools/Feedback Text Pool.asset
+  uploadId: 748846

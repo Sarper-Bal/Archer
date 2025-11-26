@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 51acc4c54237b4ee28f6a004efb7c612
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/kenney_survival-kit/Models/FBX
+    format/tree/wood.mat
+  uploadId: 748846

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3ce8b24069d2f490db1f098694b95a8c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/kenney_survival-kit/Models/FBX
+    format/fenceFortified.prefab
+  uploadId: 748846

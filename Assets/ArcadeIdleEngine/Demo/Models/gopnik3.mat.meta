@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2806020030231e446901ae6680a3486f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Models/gopnik3.mat
+  uploadId: 748846

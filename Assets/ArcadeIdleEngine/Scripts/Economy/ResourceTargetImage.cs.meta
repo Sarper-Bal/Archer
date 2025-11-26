@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 076aa620d5b24f3bb9b1b014d7272d66
+timeCreated: 1664276165
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Economy/ResourceTargetImage.cs
+  uploadId: 748846

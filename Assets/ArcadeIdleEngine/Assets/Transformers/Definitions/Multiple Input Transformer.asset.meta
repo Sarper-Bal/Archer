@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 78e20e9feade64969b654f04d5fc7f5b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Transformers/Definitions/Multiple Input
+    Transformer.asset
+  uploadId: 748846

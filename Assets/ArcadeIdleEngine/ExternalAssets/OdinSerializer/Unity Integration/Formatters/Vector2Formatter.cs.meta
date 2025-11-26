@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5048887b7ecde00507c946d31f9d70c2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/ExternalAssets/OdinSerializer/Unity Integration/Formatters/Vector2Formatter.cs
+  uploadId: 748846

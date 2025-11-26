@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: a0d827d882d84d22a391afd6c84427e7
+timeCreated: 1698138573
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Booting/LoadingScreenTween.cs
+  uploadId: 748846

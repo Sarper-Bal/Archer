@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6abcc8d8bd0f2bb488ecc22cf5c71dcf
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/Ultimate Platformer Pack/Enemies/Orc/Horns.mat
+  uploadId: 748846

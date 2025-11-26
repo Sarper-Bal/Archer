@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: de8512e6743119e408ad5c3769a64e77
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/Ultimate Platformer Pack/Level
+    and Mechanics/Goal Flag/Flag.mat
+  uploadId: 748846

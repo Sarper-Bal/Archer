@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b0d4b26bb2d2d20cd2073b2aa15e3dc6
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/ExternalAssets/OdinSerializer/Utilities/Misc/EmitUtilities.cs
+  uploadId: 748846

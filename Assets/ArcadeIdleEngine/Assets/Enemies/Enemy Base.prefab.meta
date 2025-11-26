@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4c0ebf77764199e4bb7aff1ae25e27bd
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Enemies/Enemy Base.prefab
+  uploadId: 748846

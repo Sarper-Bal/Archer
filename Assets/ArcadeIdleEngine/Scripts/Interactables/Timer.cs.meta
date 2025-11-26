@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: c7b404785e32443fb54eb7036d61de5d
+timeCreated: 1708813631
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Interactables/Timer.cs
+  uploadId: 748846

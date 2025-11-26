@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 58855810de8084dfabf24e586684473f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Gathering/Gatherable Prefabs/Gatherable
+    Basic Tree.prefab
+  uploadId: 748846

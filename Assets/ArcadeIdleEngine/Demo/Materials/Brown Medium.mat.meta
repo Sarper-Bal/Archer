@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6a3388e8f5636453f84af959596e3e07
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Materials/Brown Medium.mat
+  uploadId: 748846

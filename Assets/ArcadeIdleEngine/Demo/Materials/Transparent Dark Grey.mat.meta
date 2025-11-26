@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e28cc90b611665244b3a9c53085d4679
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Materials/Transparent Dark Grey.mat
+  uploadId: 748846

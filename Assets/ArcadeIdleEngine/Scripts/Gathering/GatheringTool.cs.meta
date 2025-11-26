@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: c50875795e9347318465d56faca60952
+timeCreated: 1693499584
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Gathering/GatheringTool.cs
+  uploadId: 748846

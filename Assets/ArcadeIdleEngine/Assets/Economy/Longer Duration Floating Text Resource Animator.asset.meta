@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 2fdff49fb3f634a0bab0fad6d15f723f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Economy/Longer Duration Floating Text
+    Resource Animator.asset
+  uploadId: 748846

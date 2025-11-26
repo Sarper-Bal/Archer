@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 04bd7b3741f42419c89b6f8c4e835004
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Pools/Items/Showcase/Green Gem.asset
+  uploadId: 748846

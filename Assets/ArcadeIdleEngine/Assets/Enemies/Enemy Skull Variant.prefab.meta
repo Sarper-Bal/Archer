@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 5a5587e9f4756de48b76f7f5a479867a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Enemies/Enemy Skull Variant.prefab
+  uploadId: 748846

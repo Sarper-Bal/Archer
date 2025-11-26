@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 938452e2e972e7546a735db682b840a0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Materials/Orange Medium.mat
+  uploadId: 748846

@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 9c1eaf3467a74cb6ae80ee6c1cb61d41
+timeCreated: 1664275428
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Economy/FloatingImageResourceAnimator.cs
+  uploadId: 748846

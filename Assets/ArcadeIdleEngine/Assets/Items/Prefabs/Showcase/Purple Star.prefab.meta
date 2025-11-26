@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: d4ec66f1b102b6e438f2ca2aa2480fc1
+labels:
+- Pickable
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Items/Prefabs/Showcase/Purple Star.prefab
+  uploadId: 748846

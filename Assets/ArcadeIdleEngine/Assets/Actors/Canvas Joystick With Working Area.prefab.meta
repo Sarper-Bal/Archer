@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0d695d03c4e954162b02320575e50dff
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Actors/Canvas Joystick With Working Area.prefab
+  uploadId: 748846

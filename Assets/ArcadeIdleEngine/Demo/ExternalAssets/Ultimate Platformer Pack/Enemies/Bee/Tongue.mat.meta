@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 50b02ff9d7783f24d909bf44ee4b4e3b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/Ultimate Platformer Pack/Enemies/Bee/Tongue.mat
+  uploadId: 748846

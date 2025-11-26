@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3b78f4457802b9d4eb14f431bee53a02
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/Ultimate Platformer Pack/Enemies/Bee/Main_2.mat
+  uploadId: 748846

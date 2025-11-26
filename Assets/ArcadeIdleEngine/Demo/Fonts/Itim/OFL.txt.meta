@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 04cab09e88284de45ad6938c5f168a6d
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Fonts/Itim/OFL.txt
+  uploadId: 748846

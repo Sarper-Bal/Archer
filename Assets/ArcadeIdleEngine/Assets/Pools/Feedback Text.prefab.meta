@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: fdde631d33b504b44b68246374823e39
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Pools/Feedback Text.prefab
+  uploadId: 748846

@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: ecc3fcba97cd44839adf8f32b97f7e26
+timeCreated: 1700169956
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Interactables/MonitorEntrySpriteText.cs
+  uploadId: 748846

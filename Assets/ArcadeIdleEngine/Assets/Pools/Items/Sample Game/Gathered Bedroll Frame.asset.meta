@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 7ade6782f641942e5948333ea8d62da1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Pools/Items/Sample Game/Gathered Bedroll
+    Frame.asset
+  uploadId: 748846

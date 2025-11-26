@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: dd6c13da94834b61a0665f7ed8077391
+timeCreated: 1698696149
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Interactables/InteractablePopup.cs
+  uploadId: 748846

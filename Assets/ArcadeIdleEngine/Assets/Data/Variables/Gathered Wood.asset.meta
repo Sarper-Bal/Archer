@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 53f9e9201173440f7af8e1b94289afc9
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Data/Variables/Gathered Wood.asset
+  uploadId: 748846

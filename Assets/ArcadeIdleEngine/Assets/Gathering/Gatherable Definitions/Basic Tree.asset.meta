@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 4412cf795cf4b4691b7d6a002282a9f3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Gathering/Gatherable Definitions/Basic
+    Tree.asset
+  uploadId: 748846

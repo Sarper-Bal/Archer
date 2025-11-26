@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4c0d87c70115b49648c74560efc7f9a6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Pools/Items/Showcase/Purple Star.asset
+  uploadId: 748846

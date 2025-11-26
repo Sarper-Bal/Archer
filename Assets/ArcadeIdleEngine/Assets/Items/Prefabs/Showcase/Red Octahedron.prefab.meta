@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 541edfb3ac2e8584584fd70a6349bbe3
+labels:
+- Pickable
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Items/Prefabs/Showcase/Red Octahedron.prefab
+  uploadId: 748846

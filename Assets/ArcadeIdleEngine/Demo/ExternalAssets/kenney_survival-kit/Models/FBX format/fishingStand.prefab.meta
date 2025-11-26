@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7b0453b7ca43b4b2da9b0cbe32855396
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/kenney_survival-kit/Models/FBX
+    format/fishingStand.prefab
+  uploadId: 748846

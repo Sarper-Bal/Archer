@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: c49015e1329658942aec847f31e3e3c7
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/Ultimate Platformer Pack/Powerups
+    and Pickups/Fbx/Gem_Pink.mat
+  uploadId: 748846

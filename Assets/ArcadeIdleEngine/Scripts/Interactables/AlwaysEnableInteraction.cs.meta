@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: a065d2f362404567b518cada2945c5ad
+timeCreated: 1679747902
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Interactables/AlwaysEnableInteraction.cs
+  uploadId: 748846

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ce9ccc7ab87a5964e9699759e95c5219
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Materials/Green Lightish.mat
+  uploadId: 748846

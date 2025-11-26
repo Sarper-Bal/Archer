@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: a52a323c5dec4c10bf19161f99adb238
+timeCreated: 1699485527
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Pools/PoolInformer.cs
+  uploadId: 748846

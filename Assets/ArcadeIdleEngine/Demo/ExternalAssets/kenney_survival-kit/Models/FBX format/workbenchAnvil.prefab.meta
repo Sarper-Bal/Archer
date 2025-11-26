@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e7eb0243792a2490aa99800f6dec7f64
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/kenney_survival-kit/Models/FBX
+    format/workbenchAnvil.prefab
+  uploadId: 748846

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ddf73bc61a0c74231a61bc53e59e84d2
+labels:
+- Pickable
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Items/Prefabs/Sample Game/Gathered Item
+    Bedroll Frame.prefab
+  uploadId: 748846

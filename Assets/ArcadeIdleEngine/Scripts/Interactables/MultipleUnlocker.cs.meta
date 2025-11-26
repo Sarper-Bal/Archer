@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 407f5302fb3f407389cfbfde6b4d8d1f
+timeCreated: 1726859755
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Interactables/MultipleUnlocker.cs
+  uploadId: 748846

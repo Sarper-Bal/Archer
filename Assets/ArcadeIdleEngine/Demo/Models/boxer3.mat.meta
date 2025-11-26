@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ab03f0055115f9448b2514779d6fee35
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Models/boxer3.mat
+  uploadId: 748846

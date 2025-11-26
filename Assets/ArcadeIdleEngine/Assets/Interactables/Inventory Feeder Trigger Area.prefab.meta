@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e160dcd1af8ce4d8cb56242db1238c97
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Interactables/Inventory Feeder Trigger
+    Area.prefab
+  uploadId: 748846

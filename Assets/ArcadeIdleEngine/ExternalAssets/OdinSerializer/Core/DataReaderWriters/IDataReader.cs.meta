@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 0fcecf1887a04d30ea2d365909bc8345
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/ExternalAssets/OdinSerializer/Core/DataReaderWriters/IDataReader.cs
+  uploadId: 748846

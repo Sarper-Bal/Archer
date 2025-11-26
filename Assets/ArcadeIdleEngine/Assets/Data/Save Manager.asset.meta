@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 33fac3949785b4e6ebd037957127756c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Data/Save Manager.asset
+  uploadId: 748846

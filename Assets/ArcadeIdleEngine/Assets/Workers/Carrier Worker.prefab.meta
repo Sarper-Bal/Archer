@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a64feaeb9d7db48429b3f27a861b6275
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Workers/Carrier Worker.prefab
+  uploadId: 748846

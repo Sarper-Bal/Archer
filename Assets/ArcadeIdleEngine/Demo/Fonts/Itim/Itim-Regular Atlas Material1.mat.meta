@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7c8841d5566274d8bbe1a09ae23e25fa
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Fonts/Itim/Itim-Regular Atlas Material1.mat
+  uploadId: 748846

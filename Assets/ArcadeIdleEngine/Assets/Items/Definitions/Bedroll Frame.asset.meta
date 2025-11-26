@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 609fc9dbb9c4c43b59663180056b2d21
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Items/Definitions/Bedroll Frame.asset
+  uploadId: 748846

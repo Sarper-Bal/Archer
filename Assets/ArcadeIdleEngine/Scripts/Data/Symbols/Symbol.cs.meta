@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 889c0506c3714143bd9d98dabec628d3
+timeCreated: 1726856585
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Data/Symbols/Symbol.cs
+  uploadId: 748846

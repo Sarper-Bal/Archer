@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 82f81d7b3937340359173c97bb7f7d32
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Transformers/Standard Transformer.prefab
+  uploadId: 748846

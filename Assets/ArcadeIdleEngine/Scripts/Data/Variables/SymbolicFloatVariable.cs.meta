@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 16b78f1fd1e2414d9d211d93e37fc8ec
+timeCreated: 1726856168
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Data/Variables/SymbolicFloatVariable.cs
+  uploadId: 748846

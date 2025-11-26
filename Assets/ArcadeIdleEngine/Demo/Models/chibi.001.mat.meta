@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0a7d0339c1e2e5e438b359830ce1ebf0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/Models/chibi.001.mat
+  uploadId: 748846

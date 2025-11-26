@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/ArcadeIdleEngine/Demo/_Scenes/Booting.unity
+    guid: 6758ce2638f654b7695a5d4ac785eaf2
+  - enabled: 1
+    path: Assets/ArcadeIdleEngine/Demo/_Scenes/Showcase.unity
+    guid: 6dd483661810b8341bedc240271b220d
+  - enabled: 1
+    path: Assets/ArcadeIdleEngine/Demo/_Scenes/Sample Game.unity
+    guid: fac098ddc0a9d46e69ce466f1847edd8
+  - enabled: 1
+    path: Assets/MasterStylizedProjectiles/Scenes/MasterStylizedProjectileDemo.unity
+    guid: 2fca835fb04dad64886d40bfa4801189
+  m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

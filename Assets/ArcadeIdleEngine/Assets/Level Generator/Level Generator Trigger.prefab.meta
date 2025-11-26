@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 87686fba81bd54a3ba705774f557f186
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Level Generator/Level Generator Trigger.prefab
+  uploadId: 748846

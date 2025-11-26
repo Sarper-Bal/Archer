@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6dd483661810b8341bedc240271b220d
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/_Scenes/Showcase.unity
+  uploadId: 748846

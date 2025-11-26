@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 680d57c16af2b40a8b36ea6d07db399d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Data/Symbols/Symbol/QT.asset
+  uploadId: 748846

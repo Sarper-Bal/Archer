@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0b5a90eee6289434d873d529caae8847
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Spawners/Standard Spawner.prefab
+  uploadId: 748846

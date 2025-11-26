@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 6183d179e8be4999828a6ab1ff8e0816
+timeCreated: 1663688751
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Data/Variables/Saveable.cs
+  uploadId: 748846

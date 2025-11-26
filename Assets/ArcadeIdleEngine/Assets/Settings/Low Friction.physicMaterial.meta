@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 352f8cf1005433c4792744a6718ffc28
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 13400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Settings/Low Friction.physicMaterial
+  uploadId: 748846

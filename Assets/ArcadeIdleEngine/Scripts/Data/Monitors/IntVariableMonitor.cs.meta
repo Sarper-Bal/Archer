@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: a744659e605c4e3f844b3fa97760b0a9
+timeCreated: 1664058814
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Data/Monitors/IntVariableMonitor.cs
+  uploadId: 748846

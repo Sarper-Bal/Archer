@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f88fb04354076c646a4107a491394033
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/ExternalAssets/NaughtyAttributes-2.1.4/Scripts/Editor/NaughtyAttributes.Editor.asmdef
+  uploadId: 748846

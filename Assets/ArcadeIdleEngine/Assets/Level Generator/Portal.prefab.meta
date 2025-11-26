@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 723601930f45b472eb25ceb27e3ed2a1
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Level Generator/Portal.prefab
+  uploadId: 748846

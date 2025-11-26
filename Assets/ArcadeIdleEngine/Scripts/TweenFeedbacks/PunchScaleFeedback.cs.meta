@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: cb1a1044fa3e46ee8616c330479d0cb4
+timeCreated: 1695387848
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/TweenFeedbacks/PunchScaleFeedback.cs
+  uploadId: 748846

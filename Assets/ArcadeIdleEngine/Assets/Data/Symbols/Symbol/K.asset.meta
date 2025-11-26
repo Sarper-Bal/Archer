@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 30683c0833f7a412c99f5dc361d15b14
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Data/Symbols/Symbol/K.asset
+  uploadId: 748846

@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 5ce9049652aa4024b023adfd37318564
+timeCreated: 1698145394
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Editor/BootSceneLoader.cs
+  uploadId: 748846

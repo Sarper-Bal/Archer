@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e7b075ec51c144d9fafc1ad8edf8f7c8
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Interactables/Inventory Monitor Canvas.prefab
+  uploadId: 748846

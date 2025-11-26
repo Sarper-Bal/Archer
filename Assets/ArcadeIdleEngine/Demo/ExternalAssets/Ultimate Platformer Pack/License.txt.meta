@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7e8ab8d4c88e8e14fa72031e0c9ade62
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/Ultimate Platformer Pack/License.txt
+  uploadId: 748846

@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 99348ddb2be345879aeb5182cd3af658
+timeCreated: 1695386896
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/TweenFeedbacks/ShakeScaleFeedback.cs
+  uploadId: 748846

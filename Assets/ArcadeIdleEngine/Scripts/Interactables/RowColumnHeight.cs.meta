@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 1755008930374491b1c6fe307cd458a3
+timeCreated: 1663682709
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Interactables/RowColumnHeight.cs
+  uploadId: 748846

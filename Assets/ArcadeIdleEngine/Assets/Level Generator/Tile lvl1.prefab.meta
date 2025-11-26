@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2dddc0855b2a242c19b3f44db800503c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Level Generator/Tile lvl1.prefab
+  uploadId: 748846

@@ -1,0 +1,10 @@
+﻿fileFormatVersion: 2
+guid: 84f581597a2747e1bebdecd0101598bb
+timeCreated: 1679788587
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Booting/FrameRateUnlocker.cs
+  uploadId: 748846

@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: c3e722ab198d44cdaa7dbb704a6778d9
+timeCreated: 1726853616
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Data/Variables/BoolListVariable.cs
+  uploadId: 748846

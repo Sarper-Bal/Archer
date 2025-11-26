@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 4724b8cc23ce4b36a5960361ca904a86
+timeCreated: 1734035913
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Scripts/Actors/UIJoystickWithWorkingArea.cs
+  uploadId: 748846

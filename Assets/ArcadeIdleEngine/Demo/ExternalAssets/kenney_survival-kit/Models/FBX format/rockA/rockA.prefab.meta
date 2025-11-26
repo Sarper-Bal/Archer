@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5fa924d938adf4d0fa5e0b910d611b9b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Demo/ExternalAssets/kenney_survival-kit/Models/FBX
+    format/rockA/rockA.prefab
+  uploadId: 748846

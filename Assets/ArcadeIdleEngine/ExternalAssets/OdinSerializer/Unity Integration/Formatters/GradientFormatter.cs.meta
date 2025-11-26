@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 09ed04c76c7cc2fa4e411ea0ad86a958
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/ExternalAssets/OdinSerializer/Unity Integration/Formatters/GradientFormatter.cs
+  uploadId: 748846

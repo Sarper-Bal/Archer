@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 468e5f3a81f594339ab916f5fd903d01
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 234142
+  packageName: HyperCasual - Arcade Idle Engine
+  packageVersion: 4.2.0
+  assetPath: Assets/ArcadeIdleEngine/Assets/Data/Variables/Big Money.asset
+  uploadId: 748846
