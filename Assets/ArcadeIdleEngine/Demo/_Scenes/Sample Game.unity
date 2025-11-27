@@ -1555,6 +1555,11 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 6
       objectReference: {fileID: 0}
+    - target: {fileID: 7320214453167305776, guid: a2d872ab0871341fcb3770ee094181aa,
+        type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6826,7 +6831,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6790882568947784225, guid: 5f99486e7cd8b4bab9962635825fc22c,
         type: 3}
       insertIndex: -1
-      addedObject: {fileID: 6790882570074913311}
+      addedObject: {fileID: 6790882570074913317}
   m_SourcePrefab: {fileID: 100100000, guid: 5f99486e7cd8b4bab9962635825fc22c, type: 3}
 --- !u!1 &6790882570074913310 stripped
 GameObject:
@@ -6834,7 +6839,7 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 6790882570074913309}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &6790882570074913311
+--- !u!114 &6790882570074913317
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -6843,14 +6848,15 @@ MonoBehaviour:
   m_GameObject: {fileID: 6790882570074913310}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: db11b3fbb536f4c34869bbf880903088, type: 3}
+  m_Script: {fileID: 11500000, guid: 36b84bfb1174f410e82636f29e6ae20d, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.BasicShooter
-  projectilePool: {fileID: 11400000, guid: e9c24795c069d437ab153100808bb219, type: 2}
-  firePoint: {fileID: 701278594}
-  fireRate: 1
-  range: 5
-  enemyLayer:
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.SimpleAutoAttacker
+  _projectilePool: {fileID: 11400000, guid: e9c24795c069d437ab153100808bb219, type: 2}
+  _range: 10
+  _attacksPerSecond: 1
+  _rotationSpeed: 10
+  _firePoint: {fileID: 701278594}
+  _enemyLayer:
     serializedVersion: 2
     m_Bits: 64
 --- !u!114 &6859842002472669151
