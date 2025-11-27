@@ -9736,8 +9736,12 @@ MonoBehaviour:
   _trackingMode: 1
   speed: 10
   lifeTime: 3
-  explosionPrefab: {fileID: 5745667949009842635, guid: f00c38ffa516d9b4d9e593f809bbf9df,
-    type: 3}
+  explosionPool: {fileID: 11400000, guid: 362344e764db340dc81250abb0233dab, type: 2}
+  explosionRadius: 3
+  damageAmount: 10
+  damageLayer:
+    serializedVersion: 2
+    m_Bits: 64
 --- !u!1 &4033740031146815036
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bb296a78033f40df87d12470d7f324f, type: 3}
+  m_Name: MyExplosionPool
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.ExplosionPool
+  MaxSize: 20
+  Behaviour: {fileID: -2270434888821036822, guid: f00c38ffa516d9b4d9e593f809bbf9df,
+    type: 3}

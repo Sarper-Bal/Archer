@@ -1,134 +1,129 @@
 using UnityEngine;
 using System.Collections;
-using ArcadeBridge.ArcadeIdleEngine.Pools; // Namespace'in doğru olduğundan emin ol
+using ArcadeBridge.ArcadeIdleEngine.Pools;
 
 namespace IndianOceanAssets.Engine2_5D
 {
-    // Mod Seçenekleri
+    // Mermi Davranış Tipleri
     public enum ProjectileTrackingMode
     {
-        Guided, // (Akıllı) Sürekli hedefi takip eder
-        Linear  // (Akılsız) İlk atıldığı yöne dümdüz gider
+        Guided, // (Güdümlü) Hedefi kovalar
+        Linear  // (Havan Topu/Büyü Gibi) Belirlenen noktaya gider ve patlar
     }
 
     public class BasicProjectile : MonoBehaviour
     {
-        [Header("Hareket Tipi")]
-        [Tooltip("Guided: Hedefi takip eder. Linear: Dümdüz gider.")]
+        [Header("Hareket Ayarları")]
+        [Tooltip("Guided: Hedefi takip eder. Linear: Hedefin ilk konumuna gider.")]
         [SerializeField] private ProjectileTrackingMode _trackingMode = ProjectileTrackingMode.Guided;
-
-        [Header("Ayarlar")]
         [SerializeField] private float speed = 15f;
-        [SerializeField] private float lifeTime = 3f;
-        [SerializeField] private GameObject explosionPrefab;
+        [SerializeField] private float lifeTime = 5f;
+
+        [Header("Patlama & Hasar (AoE)")]
+        // --- DEĞİŞİKLİK: Prefab yerine Pool Verisi ---
+        [Tooltip("Inspector'da oluşturduğun 'ExplosionPool' dosyasını buraya sürükle.")]
+        [SerializeField] private ExplosionPool explosionPool; 
+        
+        [SerializeField] private float explosionRadius = 3f; // Patlama Yarıçapı
+        [SerializeField] private float damageAmount = 10f;   // Verilecek Hasar
+        [SerializeField] private LayerMask damageLayer;      // Kimler hasar alacak? (Enemy)
 
         private BasicProjectilePool _myPool;
         private Transform _target;
-        private Vector3 _lastTargetPos;
+        private Vector3 _targetPosition;
         private Coroutine _lifeTimeCoroutine;
 
-        // Linear mod için kilitli yön
-        private Vector3 _cachedDirection; 
+        // Performans için önbellekli dizi
+        private readonly Collider[] _explosionHits = new Collider[20]; 
 
         public void Initialize(Transform target, BasicProjectilePool pool)
         {
             _target = target;
             _myPool = pool;
 
-            // İlk Pozisyon Kaydı
-            if (_target != null) 
+            // Hedef Noktayı Belirle
+            if (_target != null)
             {
-                _lastTargetPos = _target.position;
+                _targetPosition = _target.position;
                 
-                // Linear mod için yönü en başta hesapla ve hafızaya al
-                if (_trackingMode == ProjectileTrackingMode.Linear)
-                {
-                    // (Hedef - Ben) işlemi yönü verir
-                    _cachedDirection = (_target.position - transform.position).normalized;
-                    
-                    // Merminin ucunu o yöne çevir
-                    if (_cachedDirection != Vector3.zero)
-                        transform.rotation = Quaternion.LookRotation(_cachedDirection);
-                }
+                Vector3 dir = (_targetPosition - transform.position).normalized;
+                if(dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
+            }
+            else
+            {
+                _targetPosition = transform.position + transform.forward * 50f;
             }
 
-            // Yaşam süresi sayacını başlat
             if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
             _lifeTimeCoroutine = StartCoroutine(LifeTimeRoutine());
         }
 
         private void Update()
         {
-            // --- MODA GÖRE HAREKET MANTIĞI ---
+            if (_trackingMode == ProjectileTrackingMode.Guided)
+            {
+                if (_target != null && _target.gameObject.activeInHierarchy)
+                {
+                    _targetPosition = _target.position;
+                }
+            }
+            
+            // Hedefe İlerle
+            transform.position = Vector3.MoveTowards(transform.position, _targetPosition, speed * Time.deltaTime);
 
             if (_trackingMode == ProjectileTrackingMode.Guided)
             {
-                // AKILLI MERMİ: Her frame'de hedefi yeniden hesapla
-                MoveGuided();
-            }
-            else
-            {
-                // AKILSIZ MERMİ: Sadece ileri git (En yüksek performans)
-                MoveLinear();
+                Vector3 dir = (_targetPosition - transform.position).normalized;
+                if (dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
             }
 
-            // Çarpışma Kontrolü (Yedek) - Çok hızlı mermiler için
-            // Linear modda hedef null olsa bile son noktaya gitme derdi olmadığı için 
-            // sadece fiziksel çarpışma (OnTriggerEnter) yeterli olabilir ama bunu da tutuyoruz.
-            if (_trackingMode == ProjectileTrackingMode.Guided && Vector3.Distance(transform.position, _lastTargetPos) < 0.5f)
+            // Hedefe Vardık mı?
+            if (Vector3.Distance(transform.position, _targetPosition) < 0.1f)
             {
-                HitTarget();
+                Explode();
             }
-        }
-
-        // AKILLI HAREKET (Eski Sistem)
-        private void MoveGuided()
-        {
-            if (_target != null)
-            {
-                _lastTargetPos = _target.position;
-            }
-
-            Vector3 dir = (_lastTargetPos - transform.position).normalized;
-            
-            if (dir != Vector3.zero)
-            {
-                // Yönü güncelle
-                transform.rotation = Quaternion.LookRotation(dir);
-                // İlerle
-                transform.position += dir * speed * Time.deltaTime;
-            }
-        }
-
-        // AKILSIZ HAREKET (Yeni Optimize Sistem)
-        private void MoveLinear()
-        {
-            // Hiçbir hesap yapma, sadece baktığın yöne (forward) git.
-            // Bu işlemci için toplama işleminden farksızdır, çok hızlıdır.
-            transform.Translate(Vector3.forward * speed * Time.deltaTime);
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            // Düşmana çarparsa patlat
-            if (other.CompareTag("Enemy"))
+            if (other.CompareTag("Enemy") || other.gameObject.layer == LayerMask.NameToLayer("Default"))
             {
-                HitTarget();
-            }
-            // Linear modda duvara çarpınca da yok olsun istersek:
-            else if (_trackingMode == ProjectileTrackingMode.Linear && !other.CompareTag("Player"))
-            {
-                // Player hariç bir şeye çarparsa (duvar vs.) yok et
-                ReturnToPool();
+                Explode();
             }
         }
 
-        private void HitTarget()
+        // --- PATLAMA VE HASAR SİSTEMİ (GÜNCELLENDİ) ---
+        private void Explode()
         {
-            if (explosionPrefab) 
+            // 1. Havuzdan Efekt Çek
+            if (explosionPool != null)
             {
-                Instantiate(explosionPrefab, transform.position, Quaternion.identity);
+                // Havuzdan boş bir efekt al
+                ExplosionEffect effect = explosionPool.Get();
+                
+                // Efekti patlama noktasına taşı
+                effect.transform.position = transform.position;
+                effect.transform.rotation = Quaternion.identity;
+
+                // Efekti başlat (Süresi bitince havuza kendi dönecek)
+                effect.Initialize(explosionPool);
             }
+            else
+            {
+                Debug.LogWarning("BasicProjectile: Explosion Pool atanmamış!");
+            }
+
+            // 2. Alan Hasarı Ver
+            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, explosionRadius, _explosionHits, damageLayer);
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider victim = _explosionHits[i];
+                // Hasar kodu buraya gelecek...
+                Debug.Log($"<color=red>PATLAMA!</color> {victim.name} hasar aldı.");
+            }
+
+            // 3. Mermiyi Havuza İade Et
             ReturnToPool();
         }
 
@@ -150,6 +145,12 @@ namespace IndianOceanAssets.Engine2_5D
             {
                 gameObject.SetActive(false);
             }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = new Color(1, 0, 0, 0.3f);
+            Gizmos.DrawSphere(transform.position, explosionRadius);
         }
     }
 }
