@@ -93,39 +93,44 @@ namespace IndianOceanAssets.Engine2_5D
         }
 
         // --- PATLAMA VE HASAR SİSTEMİ (GÜNCELLENDİ) ---
-        private void Explode()
+       // --- BasicProjectile.cs İçindeki Explode Fonksiyonu ---
+
+private void Explode()
+{
+    // 1. Görsel Efekt
+    if (explosionPool != null)
+    {
+        var effect = explosionPool.Get();
+        effect.transform.position = transform.position;
+        effect.transform.rotation = Quaternion.identity;
+        
+        // HATA ALMAMAK İÇİN: effect.Initialize parametresine dikkat et.
+        // Eğer ExplosionEffect.cs'yi güncellemediysen burası hata verebilir.
+        // Şimdilik varsayalım ki ExplosionPool kullanıyorsun.
+        effect.Initialize(explosionPool); 
+    }
+
+    // 2. Alan Hasarı (Health System Entegrasyonu)
+    int hitCount = Physics.OverlapSphereNonAlloc(transform.position, explosionRadius, _explosionHits, damageLayer);
+
+    for (int i = 0; i < hitCount; i++)
+    {
+        Collider victim = _explosionHits[i];
+        
+        // --- DEĞİŞİKLİK BURADA ---
+        // Çarptığımız objede IDamageable (Health) var mı?
+        IDamageable damageable = victim.GetComponent<IDamageable>();
+        
+        if (damageable != null)
         {
-            // 1. Havuzdan Efekt Çek
-            if (explosionPool != null)
-            {
-                // Havuzdan boş bir efekt al
-                ExplosionEffect effect = explosionPool.Get();
-                
-                // Efekti patlama noktasına taşı
-                effect.transform.position = transform.position;
-                effect.transform.rotation = Quaternion.identity;
-
-                // Efekti başlat (Süresi bitince havuza kendi dönecek)
-                effect.Initialize(explosionPool);
-            }
-            else
-            {
-                Debug.LogWarning("BasicProjectile: Explosion Pool atanmamış!");
-            }
-
-            // 2. Alan Hasarı Ver
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, explosionRadius, _explosionHits, damageLayer);
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider victim = _explosionHits[i];
-                // Hasar kodu buraya gelecek...
-                Debug.Log($"<color=red>PATLAMA!</color> {victim.name} hasar aldı.");
-            }
-
-            // 3. Mermiyi Havuza İade Et
-            ReturnToPool();
+            damageable.TakeDamage(damageAmount);
+            // Debug.Log($"{victim.name} hasar aldı!");
         }
+    }
+
+    // 3. Mermiyi Kaldır
+    ReturnToPool();
+}
 
         private IEnumerator LifeTimeRoutine()
         {

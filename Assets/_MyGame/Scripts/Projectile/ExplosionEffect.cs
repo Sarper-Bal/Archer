@@ -1,27 +1,27 @@
 using UnityEngine;
 using System.Collections;
+using ArcadeBridge.ArcadeIdleEngine.Pools; // Havuz kütüphanesi
 
 namespace IndianOceanAssets.Engine2_5D
 {
     public class ExplosionEffect : MonoBehaviour
     {
         [Header("Ayarlar")]
-        [SerializeField] private float _duration = 2f; // Efektin süresi (Particle System süresiyle uyumlu olmalı)
+        [SerializeField] private float _duration = 2f; 
         
-        private ExplosionPool _myPool;
+        // DEĞİŞİKLİK: Artık özel "ExplosionPool" değil, genel "ObjectPool" tutuyor.
+        // Böylece hem DeathEffectPool hem de ExplosionPool kabul edebilir.
+        private ObjectPool<ExplosionEffect> _myPool;
         private Coroutine _disableCoroutine;
 
         /// <summary>
-        /// Efekti başlatır ve süre bitince havuza geri gönderir.
+        /// Efekti başlatır. Her türlü ExplosionEffect havuzunu kabul eder.
         /// </summary>
-        public void Initialize(ExplosionPool pool)
+        public void Initialize(ObjectPool<ExplosionEffect> pool)
         {
             _myPool = pool;
             
-            // Eğer önceden çalışıyorsa durdur (güvenlik için)
             if (_disableCoroutine != null) StopCoroutine(_disableCoroutine);
-            
-            // Otomatik kapanma sayacını başlat
             _disableCoroutine = StartCoroutine(DisableRoutine());
         }
 
@@ -35,7 +35,6 @@ namespace IndianOceanAssets.Engine2_5D
         {
             if (_disableCoroutine != null) StopCoroutine(_disableCoroutine);
 
-            // Havuz referansı varsa oraya dön, yoksa (test için koyduysan) pasif ol.
             if (_myPool != null)
             {
                 _myPool.Release(this);
