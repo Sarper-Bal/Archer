@@ -1,115 +1,154 @@
 using UnityEngine;
-using System.Collections; // Coroutine için gerekli
+using System.Collections;
+using ArcadeBridge.ArcadeIdleEngine.Pools; // Namespace'in doğru olduğundan emin ol
 
 namespace IndianOceanAssets.Engine2_5D
 {
+    // Mod Seçenekleri
+    public enum ProjectileTrackingMode
+    {
+        Guided, // (Akıllı) Sürekli hedefi takip eder
+        Linear  // (Akılsız) İlk atıldığı yöne dümdüz gider
+    }
+
     public class BasicProjectile : MonoBehaviour
     {
-        [Header("Hareket Ayarları")]
-        [SerializeField] private float speed = 15f;
-        [SerializeField] private float lifeTime = 3f; // Havada asılı kalma süresi
-        
-        [Header("Görsel Efektler")]
-        [SerializeField] private ParticleSystem trailEffect; // Varsa arkasındaki iz efekti
-        [SerializeField] private GameObject explosionPrefab; // Vuruş efekti
+        [Header("Hareket Tipi")]
+        [Tooltip("Guided: Hedefi takip eder. Linear: Dümdüz gider.")]
+        [SerializeField] private ProjectileTrackingMode _trackingMode = ProjectileTrackingMode.Guided;
 
-        // --- DEĞİŞİKLİK: Havuz Referansı ---
-        // Mermi hangi havuzdan geldiğini bilmeli ki oraya dönebilsin.
+        [Header("Ayarlar")]
+        [SerializeField] private float speed = 15f;
+        [SerializeField] private float lifeTime = 3f;
+        [SerializeField] private GameObject explosionPrefab;
+
         private BasicProjectilePool _myPool;
-        
         private Transform _target;
         private Vector3 _lastTargetPos;
         private Coroutine _lifeTimeCoroutine;
 
-        // --- DEĞİŞİKLİK: Initialize Metodu Güncellendi ---
-        /// <summary>
-        /// Mermiyi fırlatıldığında sıfırlar ve başlatır.
-        /// </summary>
-        /// <param name="targetTransform">Gidilecek hedef</param>
-        /// <param name="pool">Merminin ait olduğu havuz</param>
-        public void Initialize(Transform targetTransform, BasicProjectilePool pool)
+        // Linear mod için kilitli yön
+        private Vector3 _cachedDirection; 
+
+        public void Initialize(Transform target, BasicProjectilePool pool)
         {
-            _target = targetTransform;
-            _myPool = pool; // Havuzu kaydet
+            _target = target;
+            _myPool = pool;
 
-            // Hedefin konumunu al (hedef null gelse bile hata vermesin)
-            if (_target != null) _lastTargetPos = _target.position;
+            // İlk Pozisyon Kaydı
+            if (_target != null) 
+            {
+                _lastTargetPos = _target.position;
+                
+                // Linear mod için yönü en başta hesapla ve hafızaya al
+                if (_trackingMode == ProjectileTrackingMode.Linear)
+                {
+                    // (Hedef - Ben) işlemi yönü verir
+                    _cachedDirection = (_target.position - transform.position).normalized;
+                    
+                    // Merminin ucunu o yöne çevir
+                    if (_cachedDirection != Vector3.zero)
+                        transform.rotation = Quaternion.LookRotation(_cachedDirection);
+                }
+            }
 
-            // İz efektini temizle (Eğer varsa)
-            if (trailEffect != null) trailEffect.Clear();
-
-            // Ömür sayacını başlat (Destroy(lifeTime) yerine manuel sayaç)
+            // Yaşam süresi sayacını başlat
             if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
             _lifeTimeCoroutine = StartCoroutine(LifeTimeRoutine());
         }
 
         private void Update()
         {
-            // Hedef yaşıyorsa pozisyonunu güncelle
+            // --- MODA GÖRE HAREKET MANTIĞI ---
+
+            if (_trackingMode == ProjectileTrackingMode.Guided)
+            {
+                // AKILLI MERMİ: Her frame'de hedefi yeniden hesapla
+                MoveGuided();
+            }
+            else
+            {
+                // AKILSIZ MERMİ: Sadece ileri git (En yüksek performans)
+                MoveLinear();
+            }
+
+            // Çarpışma Kontrolü (Yedek) - Çok hızlı mermiler için
+            // Linear modda hedef null olsa bile son noktaya gitme derdi olmadığı için 
+            // sadece fiziksel çarpışma (OnTriggerEnter) yeterli olabilir ama bunu da tutuyoruz.
+            if (_trackingMode == ProjectileTrackingMode.Guided && Vector3.Distance(transform.position, _lastTargetPos) < 0.5f)
+            {
+                HitTarget();
+            }
+        }
+
+        // AKILLI HAREKET (Eski Sistem)
+        private void MoveGuided()
+        {
             if (_target != null)
             {
                 _lastTargetPos = _target.position;
             }
 
-            // Hedefe veya son görülen konuma doğru git
-            Vector3 direction = (_lastTargetPos - transform.position).normalized;
+            Vector3 dir = (_lastTargetPos - transform.position).normalized;
             
-            // Sıfır vektör hatasını önle
-            if (direction != Vector3.zero)
+            if (dir != Vector3.zero)
             {
-                transform.rotation = Quaternion.LookRotation(direction);
-                transform.position += direction * speed * Time.deltaTime;
+                // Yönü güncelle
+                transform.rotation = Quaternion.LookRotation(dir);
+                // İlerle
+                transform.position += dir * speed * Time.deltaTime;
             }
+        }
 
-            // Basit mesafe kontrolü (Çok hızlı mermilerde Raycast kullanılmalı)
-            float distanceToTarget = Vector3.Distance(transform.position, _lastTargetPos);
-            if (distanceToTarget < 0.5f)
-            {
-                HitTarget();
-            }
+        // AKILSIZ HAREKET (Yeni Optimize Sistem)
+        private void MoveLinear()
+        {
+            // Hiçbir hesap yapma, sadece baktığın yöne (forward) git.
+            // Bu işlemci için toplama işleminden farksızdır, çok hızlıdır.
+            transform.Translate(Vector3.forward * speed * Time.deltaTime);
         }
 
         private void OnTriggerEnter(Collider other)
         {
-            // Çarpışma ile vuruş
+            // Düşmana çarparsa patlat
             if (other.CompareTag("Enemy"))
             {
                 HitTarget();
+            }
+            // Linear modda duvara çarpınca da yok olsun istersek:
+            else if (_trackingMode == ProjectileTrackingMode.Linear && !other.CompareTag("Player"))
+            {
+                // Player hariç bir şeye çarparsa (duvar vs.) yok et
+                ReturnToPool();
             }
         }
 
         private void HitTarget()
         {
-            // Vurulan yerde efekt patlat
-            if (explosionPrefab != null)
+            if (explosionPrefab) 
             {
                 Instantiate(explosionPrefab, transform.position, Quaternion.identity);
             }
-
-            // --- DEĞİŞİKLİK: Yok Etme Yerine İade Etme ---
             ReturnToPool();
         }
 
-        // Mermi hiçbir şeye çarpmadan süre dolarsa çalışır
         private IEnumerator LifeTimeRoutine()
         {
             yield return new WaitForSeconds(lifeTime);
             ReturnToPool();
         }
 
-        // Havuza güvenli dönüş fonksiyonu
         private void ReturnToPool()
         {
             if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
-
-            // Eğer havuz referansı varsa oraya dön, yoksa (test amaçlı koyduysan) yok et.
+            
             if (_myPool != null)
             {
                 _myPool.Release(this);
             }
             else
             {
-                gameObject.SetActive(false); // Veya Destroy(gameObject);
+                gameObject.SetActive(false);
             }
         }
     }
