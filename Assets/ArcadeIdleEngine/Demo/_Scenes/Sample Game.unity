@@ -828,7 +828,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.42261827, y: 0, z: 0, w: 0.9063079}
-  m_LocalPosition: {x: 0, y: 13.256713, z: -10.284602}
+  m_LocalPosition: {x: 0, y: 13.256711, z: -10.2846}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -924,10 +924,20 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6887369967468688555, guid: 58855810de8084dfabf24e586684473f,
+        type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 8192169306597132878, guid: 58855810de8084dfabf24e586684473f,
         type: 3}
       propertyPath: m_Name
       value: Gatherable Basic Tree
+      objectReference: {fileID: 0}
+    - target: {fileID: 8192169306597132878, guid: 58855810de8084dfabf24e586684473f,
+        type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1539,6 +1549,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: Gatherable Basic Ore (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 7320214453167305776, guid: a2d872ab0871341fcb3770ee094181aa,
+        type: 3}
+      propertyPath: m_Layer
+      value: 6
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2522,6 +2537,16 @@ PrefabInstance:
       propertyPath: m_Name
       value: Shop Seller
       objectReference: {fileID: 0}
+    - target: {fileID: 4829452985829040796, guid: 9e96dc8ccf06b43b280a494d6771e6b2,
+        type: 3}
+      propertyPath: m_Layer
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4829452985829040796, guid: 9e96dc8ccf06b43b280a494d6771e6b2,
+        type: 3}
+      propertyPath: m_TagString
+      value: Enemy
+      objectReference: {fileID: 0}
     - target: {fileID: 7139837535062673468, guid: 9e96dc8ccf06b43b280a494d6771e6b2,
         type: 3}
       propertyPath: _itemsToCollect.Array.size
@@ -2967,17 +2992,17 @@ PrefabInstance:
     - target: {fileID: 2870643334763809320, guid: a2d872ab0871341fcb3770ee094181aa,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 3.35
+      value: 7.31
       objectReference: {fileID: 0}
     - target: {fileID: 2870643334763809320, guid: a2d872ab0871341fcb3770ee094181aa,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.844
+      value: 0.72
       objectReference: {fileID: 0}
     - target: {fileID: 2870643334763809320, guid: a2d872ab0871341fcb3770ee094181aa,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.13
+      value: 12.09
       objectReference: {fileID: 0}
     - target: {fileID: 2870643334763809320, guid: a2d872ab0871341fcb3770ee094181aa,
         type: 3}
@@ -6287,6 +6312,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3638816541701984110, guid: c3eb0bf5736e74fd881da53aeca37edf,
+        type: 3}
+      propertyPath: m_ScreenMatchMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3638816541701984110, guid: c3eb0bf5736e74fd881da53aeca37edf,
+        type: 3}
+      propertyPath: m_MatchWidthOrHeight
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3638816542655788417, guid: c3eb0bf5736e74fd881da53aeca37edf,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -6770,6 +6810,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8094385699331835453, guid: 5f99486e7cd8b4bab9962635825fc22c,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -6801,8 +6846,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db11b3fbb536f4c34869bbf880903088, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.BasicShooter
-  projectilePrefab: {fileID: 2829856321817114063, guid: 51777ba2ecd6fed45a171d318a10cc3e,
-    type: 3}
+  projectilePool: {fileID: 11400000, guid: e9c24795c069d437ab153100808bb219, type: 2}
   firePoint: {fileID: 701278594}
   fireRate: 1
   range: 5
@@ -6879,6 +6923,11 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2870643334763809320, guid: a2d872ab0871341fcb3770ee094181aa,
+        type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.97859
+      objectReference: {fileID: 0}
     - target: {fileID: 2870643334763809320, guid: a2d872ab0871341fcb3770ee094181aa,
         type: 3}
       propertyPath: m_LocalPosition.x

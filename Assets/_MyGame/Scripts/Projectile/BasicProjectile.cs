@@ -1,52 +1,69 @@
 using UnityEngine;
+using System.Collections; // Coroutine için gerekli
 
 namespace IndianOceanAssets.Engine2_5D
 {
     public class BasicProjectile : MonoBehaviour
     {
-        [Header("Ayarlar")]
-        [SerializeField] private float speed = 10f;
-        [SerializeField] private float lifeTime = 3f; // Hedefi bulamazsa kaç saniyede yok olsun
+        [Header("Hareket Ayarları")]
+        [SerializeField] private float speed = 15f;
+        [SerializeField] private float lifeTime = 3f; // Havada asılı kalma süresi
         
-        [Header("Efektler")]
-        [SerializeField] private GameObject explosionPrefab; // Patlama efekti
+        [Header("Görsel Efektler")]
+        [SerializeField] private ParticleSystem trailEffect; // Varsa arkasındaki iz efekti
+        [SerializeField] private GameObject explosionPrefab; // Vuruş efekti
 
-        private Transform target;
-        private Vector3 lastTargetPos; // Hedef ölürse son konumuna gitmeye devam etsin
+        // --- DEĞİŞİKLİK: Havuz Referansı ---
+        // Mermi hangi havuzdan geldiğini bilmeli ki oraya dönebilsin.
+        private BasicProjectilePool _myPool;
+        
+        private Transform _target;
+        private Vector3 _lastTargetPos;
+        private Coroutine _lifeTimeCoroutine;
 
-        private void Start()
+        // --- DEĞİŞİKLİK: Initialize Metodu Güncellendi ---
+        /// <summary>
+        /// Mermiyi fırlatıldığında sıfırlar ve başlatır.
+        /// </summary>
+        /// <param name="targetTransform">Gidilecek hedef</param>
+        /// <param name="pool">Merminin ait olduğu havuz</param>
+        public void Initialize(Transform targetTransform, BasicProjectilePool pool)
         {
-            // Hedef bulamazsa sonsuza kadar gitmesin, kendini yok etsin
-            Destroy(gameObject, lifeTime);
-        }
+            _target = targetTransform;
+            _myPool = pool; // Havuzu kaydet
 
-        // Shooter tarafından çağrılır
-        public void Initialize(Transform targetTransform)
-        {
-            this.target = targetTransform;
-            if (target != null) lastTargetPos = target.position;
+            // Hedefin konumunu al (hedef null gelse bile hata vermesin)
+            if (_target != null) _lastTargetPos = _target.position;
+
+            // İz efektini temizle (Eğer varsa)
+            if (trailEffect != null) trailEffect.Clear();
+
+            // Ömür sayacını başlat (Destroy(lifeTime) yerine manuel sayaç)
+            if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
+            _lifeTimeCoroutine = StartCoroutine(LifeTimeRoutine());
         }
 
         private void Update()
         {
-            // Eğer hedef hala varsa pozisyonunu güncelle, yoksa son bilinen konuma git
-            if (target != null)
+            // Hedef yaşıyorsa pozisyonunu güncelle
+            if (_target != null)
             {
-                lastTargetPos = target.position;
+                _lastTargetPos = _target.position;
             }
 
-            // Hedefe doğru hareket
-            Vector3 direction = (lastTargetPos - transform.position).normalized;
-            transform.position += direction * speed * Time.deltaTime;
-
-            // Hedefe bakması için (Opsiyonel)
+            // Hedefe veya son görülen konuma doğru git
+            Vector3 direction = (_lastTargetPos - transform.position).normalized;
+            
+            // Sıfır vektör hatasını önle
             if (direction != Vector3.zero)
             {
                 transform.rotation = Quaternion.LookRotation(direction);
+                transform.position += direction * speed * Time.deltaTime;
             }
 
-            // Hedefe çok yaklaştıysa çarpışma kontrolü (Manuel Distance Check)
-            if (Vector3.Distance(transform.position, lastTargetPos) < 0.5f)
+            // Basit mesafe kontrolü (Çok hızlı mermilerde Raycast kullanılmalı)
+            float distanceToTarget = Vector3.Distance(transform.position, _lastTargetPos);
+            if (distanceToTarget < 0.5f)
             {
                 HitTarget();
             }
@@ -54,7 +71,7 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void OnTriggerEnter(Collider other)
         {
-            // Eğer Collider ile çarpışırsa (Enemy tag'li)
+            // Çarpışma ile vuruş
             if (other.CompareTag("Enemy"))
             {
                 HitTarget();
@@ -63,18 +80,37 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void HitTarget()
         {
-            // --- HASAR KISMI KALDIRILDI ---
-            // Buraya ileride kendi hasar sistemini veya sadece debug log ekleyebilirsin.
-            // Debug.Log("Hedef vuruldu!");
-
-            // Patlama efekti oluştur
+            // Vurulan yerde efekt patlat
             if (explosionPrefab != null)
             {
                 Instantiate(explosionPrefab, transform.position, Quaternion.identity);
             }
 
-            // Mermiyi yok et
-            Destroy(gameObject);
+            // --- DEĞİŞİKLİK: Yok Etme Yerine İade Etme ---
+            ReturnToPool();
+        }
+
+        // Mermi hiçbir şeye çarpmadan süre dolarsa çalışır
+        private IEnumerator LifeTimeRoutine()
+        {
+            yield return new WaitForSeconds(lifeTime);
+            ReturnToPool();
+        }
+
+        // Havuza güvenli dönüş fonksiyonu
+        private void ReturnToPool()
+        {
+            if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
+
+            // Eğer havuz referansı varsa oraya dön, yoksa (test amaçlı koyduysan) yok et.
+            if (_myPool != null)
+            {
+                _myPool.Release(this);
+            }
+            else
+            {
+                gameObject.SetActive(false); // Veya Destroy(gameObject);
+            }
         }
     }
 }

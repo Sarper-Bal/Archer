@@ -14,7 +14,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/ArcadeIdleEngine/Demo/_Scenes/Sample Game.unity
     guid: fac098ddc0a9d46e69ce466f1847edd8
-  - enabled: 1
+  - enabled: 0
     path: Assets/MasterStylizedProjectiles/Scenes/MasterStylizedProjectileDemo.unity
     guid: 2fca835fb04dad64886d40bfa4801189
   m_configObjects: {}

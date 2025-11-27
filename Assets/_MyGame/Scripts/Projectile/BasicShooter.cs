@@ -4,62 +4,77 @@ namespace IndianOceanAssets.Engine2_5D
 {
     public class BasicShooter : MonoBehaviour
     {
-        [Header("Mermi Ayarları")]
-        [SerializeField] private GameObject projectilePrefab; // BasicProjectile scripti olan prefab
-        [SerializeField] private Transform firePoint; // Merminin çıkış noktası
+        [Header("Pool Ayarları")]
+        // --- DEĞİŞİKLİK: Prefab yerine Pool Verisi İstiyoruz ---
+        // Buraya oluşturduğun "BasicProjectilePool" dosyasını sürükleyeceksin.
+        [SerializeField] private BasicProjectilePool projectilePool; 
+        
+        [Header("Mermi Çıkış Noktası")]
+        [SerializeField] private Transform firePoint; 
         
         [Header("Saldırı Ayarları")]
-        [SerializeField] private float fireRate = 1f; // Saniyede kaç atış
-        [SerializeField] private float range = 10f;   // Menzil
-        [SerializeField] private LayerMask enemyLayer; // Düşman katmanı
+        [SerializeField] private float fireRate = 1f; 
+        [SerializeField] private float range = 10f;   
+        [SerializeField] private LayerMask enemyLayer; 
 
-        private float nextFireTime = 0f;
+        private float _nextFireTime = 0f;
+
+        // Performans: Her frame'de 'new WaitForSeconds' yapmamak için cache
+        private readonly Collider[] _hitBuffer = new Collider[10]; // Aynı anda max 10 düşman algıla (GC Allocation önler)
 
         private void Update()
         {
-            if (Time.time >= nextFireTime)
+            if (Time.time >= _nextFireTime)
             {
-                Transform target = FindClosestEnemy();
+                Transform target = FindClosestEnemyOptimized();
                 if (target != null)
                 {
                     Shoot(target);
-                    nextFireTime = Time.time + (1f / fireRate);
+                    _nextFireTime = Time.time + (1f / fireRate);
                 }
             }
         }
 
         private void Shoot(Transform target)
         {
-            if (projectilePrefab == null) return;
-
-            // Mermiyi Yarat (Instantiate)
-            GameObject projObj = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
-            
-            // Mermiyi Başlat
-            BasicProjectile projectile = projObj.GetComponent<BasicProjectile>();
-            if (projectile != null)
+            if (projectilePool == null)
             {
-                projectile.Initialize(target);
+                Debug.LogError("BasicShooter: Projectile Pool atanmamış! Lütfen Inspector'dan atayın.");
+                return;
             }
+
+            // --- DEĞİŞİKLİK: Instantiate Yerine Pool.Get() ---
+            // 1. Havuzdan pasif bir mermi çek (veya yoksa yenisini yaratır)
+            BasicProjectile projectile = projectilePool.Get();
+            
+            // 2. Pozisyonu ve açıyı ayarla
+            projectile.transform.position = firePoint.position;
+            projectile.transform.rotation = Quaternion.identity;
+
+            // 3. Mermiyi başlat ve havuz referansını gönder (ki geri dönebilsin)
+            projectile.Initialize(target, projectilePool);
         }
 
-        // En yakın düşmanı bulan basit fonksiyon
-        private Transform FindClosestEnemy()
+        // --- DEĞİŞİKLİK: NonAlloc Kullanımı (Sıfır Çöp Üretimi) ---
+        private Transform FindClosestEnemyOptimized()
         {
-            // Physics.OverlapSphere en optimize yöntemlerden biridir
-            Collider[] hits = Physics.OverlapSphere(transform.position, range, enemyLayer);
+            // Physics.OverlapSphere yerine NonAlloc kullanarak RAM şişmesini önlüyoruz.
+            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, range, _hitBuffer, enemyLayer);
             
             Transform bestTarget = null;
             float closestDistanceSqr = Mathf.Infinity;
             Vector3 currentPos = transform.position;
 
-            foreach (Collider hit in hits)
+            for (int i = 0; i < hitCount; i++)
             {
-                // Sadece "Enemy" tag'i olanlara bak
-                if (hit.CompareTag("Enemy"))
+                Collider hit = _hitBuffer[i];
+                
+                // Null kontrolü ve Tag kontrolü
+                if (hit != null && hit.CompareTag("Enemy"))
                 {
                     Vector3 directionToTarget = hit.transform.position - currentPos;
-                    float dSqrToTarget = directionToTarget.sqrMagnitude;
+                    float dSqrToTarget = directionToTarget.sqrMagnitude; // Distance yerine sqrMagnitude daha hızlıdır (karekök almaz)
+                    
                     if (dSqrToTarget < closestDistanceSqr)
                     {
                         closestDistanceSqr = dSqrToTarget;
@@ -70,10 +85,9 @@ namespace IndianOceanAssets.Engine2_5D
             return bestTarget;
         }
 
-        // Menzili Editörde görmek için Gizmo
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = Color.red;
+            Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(transform.position, range);
         }
     }
