@@ -4,80 +4,84 @@ using ArcadeBridge.ArcadeIdleEngine.Pools;
 
 namespace IndianOceanAssets.Engine2_5D
 {
-    // Mermi Davranış Tipleri
     public enum ProjectileTrackingMode
     {
-        Guided, // (Güdümlü) Hedefi kovalar
-        Linear  // (Havan Topu/Büyü Gibi) Belirlenen noktaya gider ve patlar
+        Guided, // Hedefi takip eder
+        Linear  // Dümdüz gider (Doğrusal)
     }
 
     public class BasicProjectile : MonoBehaviour
     {
         [Header("Hareket Ayarları")]
-        [Tooltip("Guided: Hedefi takip eder. Linear: Hedefin ilk konumuna gider.")]
         [SerializeField] private ProjectileTrackingMode _trackingMode = ProjectileTrackingMode.Guided;
         [SerializeField] private float speed = 15f;
         [SerializeField] private float lifeTime = 5f;
 
-        [Header("Patlama & Hasar (AoE)")]
-        // --- DEĞİŞİKLİK: Prefab yerine Pool Verisi ---
-        [Tooltip("Inspector'da oluşturduğun 'ExplosionPool' dosyasını buraya sürükle.")]
-        [SerializeField] private ExplosionPool explosionPool; 
-        
-        [SerializeField] private float explosionRadius = 3f; // Patlama Yarıçapı
-        [SerializeField] private float damageAmount = 10f;   // Verilecek Hasar
-        [SerializeField] private LayerMask damageLayer;      // Kimler hasar alacak? (Enemy)
+        [Header("Efektler")]
+        [SerializeField] private ExplosionPool explosionPool; // Patlama Efekti Havuzu
+        [SerializeField] private float explosionRadius = 2f;  // Alan hasarı çapı
+        [SerializeField] private LayerMask damageLayer;       // Kim hasar alacak? (Enemy)
 
         private BasicProjectilePool _myPool;
         private Transform _target;
         private Vector3 _targetPosition;
+        private float _currentDamage; // Silahdan gelen hasar bilgisi
         private Coroutine _lifeTimeCoroutine;
 
-        // Performans için önbellekli dizi
-        private readonly Collider[] _explosionHits = new Collider[20]; 
+        // Bellek optimizasyonu (GC Free)
+        private readonly Collider[] _explosionHits = new Collider[15];
 
-        public void Initialize(Transform target, BasicProjectilePool pool)
+        /// <summary>
+        /// Mermiyi başlatır ve özelliklerini yükler.
+        /// </summary>
+        /// <param name="target">Hedef</param>
+        /// <param name="pool">Merminin ait olduğu havuz</param>
+        /// <param name="damage">Silahın hasar değeri</param>
+        public void Initialize(Transform target, BasicProjectilePool pool, float damage)
         {
             _target = target;
             _myPool = pool;
+            _currentDamage = damage; // Hasarı kaydet
 
-            // Hedef Noktayı Belirle
+            // Hedef konum belirleme
             if (_target != null)
             {
                 _targetPosition = _target.position;
                 
+                // İlk yönlendirme
                 Vector3 dir = (_targetPosition - transform.position).normalized;
-                if(dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
+                if (dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
             }
             else
             {
+                // Hedefsiz atış (İleri git)
                 _targetPosition = transform.position + transform.forward * 50f;
             }
 
+            // Yaşam süresi sayacını başlat
             if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
             _lifeTimeCoroutine = StartCoroutine(LifeTimeRoutine());
         }
 
         private void Update()
         {
-            if (_trackingMode == ProjectileTrackingMode.Guided)
+            // Guided Mod: Hedef hareket ederse rotayı güncelle
+            if (_trackingMode == ProjectileTrackingMode.Guided && _target != null && _target.gameObject.activeInHierarchy)
             {
-                if (_target != null && _target.gameObject.activeInHierarchy)
-                {
-                    _targetPosition = _target.position;
-                }
+                _targetPosition = _target.position;
             }
-            
-            // Hedefe İlerle
+
+            // Hareket
             transform.position = Vector3.MoveTowards(transform.position, _targetPosition, speed * Time.deltaTime);
 
+            // Yönelme (Guided modda sürekli, Linear modda başta yapıldı)
             if (_trackingMode == ProjectileTrackingMode.Guided)
             {
                 Vector3 dir = (_targetPosition - transform.position).normalized;
                 if (dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
             }
 
-            // Hedefe Vardık mı?
+            // Hedefe varış kontrolü
             if (Vector3.Distance(transform.position, _targetPosition) < 0.1f)
             {
                 Explode();
@@ -86,48 +90,41 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other.CompareTag("Enemy") || other.gameObject.layer == LayerMask.NameToLayer("Default"))
+            // Düşmana veya duvara çarpınca patla
+            if (((1 << other.gameObject.layer) & damageLayer) != 0 || other.gameObject.layer == 0) // Layer check + Default layer
             {
                 Explode();
             }
         }
 
-        // --- PATLAMA VE HASAR SİSTEMİ (GÜNCELLENDİ) ---
-       // --- BasicProjectile.cs İçindeki Explode Fonksiyonu ---
+        private void Explode()
+        {
+            // 1. Görsel Efekt (Pool'dan çek)
+            if (explosionPool != null)
+            {
+                var effect = explosionPool.Get();
+                effect.transform.position = transform.position;
+                effect.transform.rotation = Quaternion.identity;
+                effect.Initialize(explosionPool);
+            }
 
-private void Explode()
-{
-    // 1. Görsel Efekt
-    if (explosionPool != null)
-    {
-        var effect = explosionPool.Get();
-        effect.transform.position = transform.position;
-        effect.transform.rotation = Quaternion.identity;
-        
-        // HATA ALMAMAK İÇİN: effect.Initialize parametresine dikkat et.
-        // Eğer ExplosionEffect.cs'yi güncellemediysen burası hata verebilir.
-        // Şimdilik varsayalım ki ExplosionPool kullanıyorsun.
-        effect.Initialize(explosionPool); 
-    }
+            // 2. Alan Hasarı (AOE)
+            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, explosionRadius, _explosionHits, damageLayer);
 
-    // 2. Alan Hasarı (Health System Entegrasyonu)
-    int hitCount = Physics.OverlapSphereNonAlloc(transform.position, explosionRadius, _explosionHits, damageLayer);
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider victim = _explosionHits[i];
+                
+                // IDamageable arayüzünü ara ve hasar ver
+                if (victim.TryGetComponent(out IDamageable damageable))
+                {
+                    damageable.TakeDamage(_currentDamage);
+                }
+            }
 
-    for (int i = 0; i < hitCount; i++)
-    {
-        Collider victim = _explosionHits[i];
-        
-        // --- DEĞİŞİKLİK BURADA ---
-        // Çarptığımız objede IDamageable (Health) var mı?
-        if (victim.TryGetComponent(out IDamageable damageable))
-{
-    damageable.TakeDamage(damageAmount);
-}
-    }
-
-    // 3. Mermiyi Kaldır
-    ReturnToPool();
-}
+            // 3. Mermiyi iade et
+            ReturnToPool();
+        }
 
         private IEnumerator LifeTimeRoutine()
         {
@@ -138,20 +135,14 @@ private void Explode()
         private void ReturnToPool()
         {
             if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
-            
-            if (_myPool != null)
-            {
-                _myPool.Release(this);
-            }
-            else
-            {
-                gameObject.SetActive(false);
-            }
+
+            if (_myPool != null) _myPool.Release(this);
+            else gameObject.SetActive(false);
         }
 
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = new Color(1, 0, 0, 0.3f);
+            Gizmos.color = new Color(1, 0, 0, 0.4f);
             Gizmos.DrawSphere(transform.position, explosionRadius);
         }
     }

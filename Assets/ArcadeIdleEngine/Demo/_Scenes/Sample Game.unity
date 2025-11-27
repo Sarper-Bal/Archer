@@ -7526,10 +7526,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 36b84bfb1174f410e82636f29e6ae20d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.SimpleAutoAttacker
-  _projectilePool: {fileID: 11400000, guid: e9c24795c069d437ab153100808bb219, type: 2}
-  _range: 10
-  _attacksPerSecond: 1
-  _rotationSpeed: 10
+  _equippedWeapon: {fileID: 11400000, guid: 1029a9f7355a04da6990b5e6f5762d60, type: 2}
   _firePoint: {fileID: 701278594}
   _enemyLayer:
     serializedVersion: 2

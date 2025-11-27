@@ -1,69 +1,63 @@
 using UnityEngine;
-using ArcadeBridge.ArcadeIdleEngine.Pools; // Havuz sistemi namespace'i
-using System.Collections;
+using ArcadeBridge.ArcadeIdleEngine.Pools;
 
 namespace IndianOceanAssets.Engine2_5D
 {
     public class SimpleAutoAttacker : MonoBehaviour
     {
-        [Header("Havuz Ayarları")]
-        [Tooltip("Project panelinde oluşturduğun 'BasicProjectilePool' dosyasını buraya sürükle.")]
-        [SerializeField] private BasicProjectilePool _projectilePool;
+        [Header("Silah Kurulumu")]
+        [Tooltip("Veri klasöründe oluşturduğun Silah Verisini (ScriptableObject) buraya sürükle.")]
+        [SerializeField] private WeaponDefinition _equippedWeapon;
 
-        [Header("Saldırı Ayarları")]
-        [SerializeField] private float _range = 10f;          // Saldırı Menzili
-        [SerializeField] private float _attacksPerSecond = 1f; // Saniyedeki Saldırı Hızı
-        [SerializeField] private float _rotationSpeed = 10f;   // Dönüş Hızı
-        [SerializeField] private Transform _firePoint;         // Ok Çıkış Noktası
-        
-        [Header("Hedefleme (Layer)")]
-        [Tooltip("Sadece 'Enemy' katmanını seçmelisin.")]
-        [SerializeField] private LayerMask _enemyLayer;        
+        [Header("Bağlantılar")]
+        [SerializeField] private Transform _firePoint;  // Okun çıkacağı nokta
+        [SerializeField] private LayerMask _enemyLayer; // Düşman katmanı (Sadece Enemy seçili olsun)
 
         // Private Değişkenler
-        private Transform _currentTarget;       
-        private float _lastAttackTime;          
-        
-        // Bellek optimizasyonu için önbellekli dizi (Çöp oluşturmaz)
-        private readonly Collider[] _hitBuffer = new Collider[20]; 
+        private Transform _currentTarget;
+        private float _nextAttackTime;
+        private readonly Collider[] _hitBuffer = new Collider[20]; // Bellek dostu arama
 
         private void Update()
         {
-            // 1. Hedef kontrolü: Hedef yoksa veya öldüyse/pasif olduysa yeni hedef ara
+            // Eğer silah takılı değilse hiçbir şey yapma
+            if (_equippedWeapon == null) return;
+
+            // 1. Hedef Kontrolü: Hedef yoksa veya öldüyse yenisini ara
             if (_currentTarget == null || !_currentTarget.gameObject.activeInHierarchy)
             {
-                FindClosestEnemyByLayer();
+                FindClosestEnemyDataDriven();
             }
 
-            // 2. Hedef varsa saldırı moduna geç
+            // 2. Saldırı Döngüsü
             if (_currentTarget != null)
             {
-                // Hedef menzilden çıktı mı?
+                // Menzil Kontrolü (Veri dosyasından okunuyor)
                 float distance = Vector3.Distance(transform.position, _currentTarget.position);
-                if (distance > _range)
+                if (distance > _equippedWeapon.Range)
                 {
-                    _currentTarget = null; // Hedefi bırak
+                    _currentTarget = null; // Hedef çok uzaklaştı, bırak
                     return;
                 }
 
-                // Karaktere hedefe dönme komutu ver
+                // Hedefe Dön
                 RotateTowardsTarget();
 
-                // Saldırı sıklığını kontrol et
-                if (Time.time >= _lastAttackTime + (1f / _attacksPerSecond))
+                // Saldırı Hızı Kontrolü (Veri dosyasından okunuyor)
+                if (Time.time >= _nextAttackTime)
                 {
                     Attack();
-                    _lastAttackTime = Time.time;
+                    _nextAttackTime = Time.time + _equippedWeapon.AttackInterval;
                 }
             }
         }
 
-        // --- LAYER TABANLI ARAMA (EN OPTİMİZE YÖNTEM) ---
-        private void FindClosestEnemyByLayer()
+        private void FindClosestEnemyDataDriven()
         {
-            // Sadece _enemyLayer katmanındaki objeleri tarar. Diğer her şeyi (duvar, zemin) yok sayar.
-            // Bu işlemciyi %90 oranında rahatlatır.
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, _range, _hitBuffer, _enemyLayer);
+            if (_equippedWeapon == null) return;
+
+            // Physics.OverlapSphereNonAlloc ile optimize arama (Menzil verisi silahtan geliyor)
+            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, _equippedWeapon.Range, _hitBuffer, _enemyLayer);
 
             Transform closestEnemy = null;
             float closestDistanceSqr = Mathf.Infinity;
@@ -72,12 +66,10 @@ namespace IndianOceanAssets.Engine2_5D
             for (int i = 0; i < hitCount; i++)
             {
                 Collider hit = _hitBuffer[i];
-
                 if (hit != null && hit.gameObject.activeInHierarchy)
                 {
-                    // Ekstra güvenlik: Layer doğru olsa bile Tag'i de kontrol edelim
-                    // (Eğer Layer'ı yanlışlıkla başka objeye verdiysen hata olmasın diye)
-                    if (hit.CompareTag("Enemy")) 
+                    // Ekstra güvenlik: Tag kontrolü
+                    if (hit.CompareTag("Enemy"))
                     {
                         Vector3 directionToTarget = hit.transform.position - currentPos;
                         float dSqrToTarget = directionToTarget.sqrMagnitude;
@@ -90,7 +82,6 @@ namespace IndianOceanAssets.Engine2_5D
                     }
                 }
             }
-
             _currentTarget = closestEnemy;
         }
 
@@ -99,39 +90,43 @@ namespace IndianOceanAssets.Engine2_5D
             if (_currentTarget == null) return;
 
             Vector3 direction = (_currentTarget.position - transform.position).normalized;
-            direction.y = 0; // Sadece kendi ekseninde dön (yukarı bakmasın)
+            direction.y = 0; // Sadece Y ekseninde dön (Karakter eğilmesin)
 
             if (direction != Vector3.zero)
             {
                 Quaternion lookRotation = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * _rotationSpeed);
+                // Dönüş hızı silahtan geliyor (Ağır silahlar yavaş dönebilir)
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * _equippedWeapon.RotationSpeed);
             }
         }
 
         private void Attack()
         {
-            if (_projectilePool == null) 
+            if (_equippedWeapon.ProjectilePool == null)
             {
-                Debug.LogError("Projectile Pool atanmamış!");
+                Debug.LogError($"HATA: '{_equippedWeapon.name}' adlı silah verisinde Mermi Havuzu (Projectile Pool) atanmamış!");
                 return;
             }
 
-            // Havuzdan Mermi Çek
-            BasicProjectile projectile = _projectilePool.Get();
+            // 1. Havuzdan mermi çek (Verideki havuzu kullan)
+            BasicProjectile projectile = _equippedWeapon.ProjectilePool.Get();
             
-            // Konum ve Yön Ata
+            // 2. Pozisyon ve Açı
             projectile.transform.position = _firePoint.position;
             projectile.transform.rotation = Quaternion.LookRotation(_currentTarget.position - _firePoint.position);
 
-            // Mermiyi Başlat
-            projectile.Initialize(_currentTarget, _projectilePool);
+            // 3. Mermiyi Başlat (Hasar verisini de gönder)
+            projectile.Initialize(_currentTarget, _equippedWeapon.ProjectilePool, _equippedWeapon.Damage);
         }
 
         // Editörde menzili görmek için
         private void OnDrawGizmosSelected()
         {
-            Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(transform.position, _range);
+            if (_equippedWeapon != null)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(transform.position, _equippedWeapon.Range);
+            }
         }
     }
 }
