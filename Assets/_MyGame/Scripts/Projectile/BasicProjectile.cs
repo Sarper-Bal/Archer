@@ -119,13 +119,10 @@ private void Explode()
         
         // --- DEĞİŞİKLİK BURADA ---
         // Çarptığımız objede IDamageable (Health) var mı?
-        IDamageable damageable = victim.GetComponent<IDamageable>();
-        
-        if (damageable != null)
-        {
-            damageable.TakeDamage(damageAmount);
-            // Debug.Log($"{victim.name} hasar aldı!");
-        }
+        if (victim.TryGetComponent(out IDamageable damageable))
+{
+    damageable.TakeDamage(damageAmount);
+}
     }
 
     // 3. Mermiyi Kaldır

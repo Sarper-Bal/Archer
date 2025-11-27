@@ -9737,7 +9737,7 @@ MonoBehaviour:
   speed: 10
   lifeTime: 3
   explosionPool: {fileID: 11400000, guid: 362344e764db340dc81250abb0233dab, type: 2}
-  explosionRadius: 3
+  explosionRadius: 0.5
   damageAmount: 10
   damageLayer:
     serializedVersion: 2
