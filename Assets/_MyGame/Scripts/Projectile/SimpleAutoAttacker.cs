@@ -12,17 +12,21 @@ namespace IndianOceanAssets.Engine2_5D
         [SerializeField] private Transform _firePoint;  
         [SerializeField] private LayerMask _enemyLayer; 
 
-        // --- DEĞİŞİKLİK 1: Rigidbody Referansı ---
+        // --- OPTİMİZASYON AYARLARI ---
+        private const float SEARCH_INTERVAL = 0.2f; // Hedef arama sıklığı (Saniyede 5 kere)
+
         private Rigidbody _rb; 
-        
         private Transform _currentTarget;
         private float _nextAttackTime;
+        private float _nextSearchTime; // Arama zamanlayıcısı
         private readonly Collider[] _hitBuffer = new Collider[20];
         private bool _isMoving;
+        
+        // Optimizasyon için önbelleklenmiş değerler
+        private float _sqrRange; // Menzilin karesi (Karekök işleminden kaçmak için)
 
         private void Awake()
         {
-            // Karakterin fizik bileşenini alıyoruz (En güvenilir hareket kaynağı)
             _rb = GetComponent<Rigidbody>();
         }
 
@@ -31,10 +35,11 @@ namespace IndianOceanAssets.Engine2_5D
             if (_equippedWeapon != null)
             {
                 var health = GetComponent<Health>();
-                if (health != null)
-                {
-                    health.InitializeHealth(_equippedWeapon.PlayerMaxHealth);
-                }
+                if (health != null) health.InitializeHealth(_equippedWeapon.PlayerMaxHealth);
+
+                // Menzilin karesini bir kere hesaplayıp saklıyoruz
+                // Örn: Menzil 10 ise, SqrRange 100 olur.
+                _sqrRange = _equippedWeapon.Range * _equippedWeapon.Range;
             }
         }
 
@@ -42,36 +47,40 @@ namespace IndianOceanAssets.Engine2_5D
         {
             if (_equippedWeapon == null) return;
 
-            // --- DEĞİŞİKLİK 2: Kesin Hareket Kontrolü ---
+            // 1. Hareket Kontrolü (Çok ucuz işlem, her frame yapılabilir)
             CheckMovementPhysics();
 
-            // Hedef Kontrolü
+            // 2. Hedef Kontrolü (Optimize Edildi)
             if (_currentTarget == null || !_currentTarget.gameObject.activeInHierarchy)
             {
-                FindClosestEnemyDataDriven();
+                // Her karede değil, sadece belirli aralıklarla ara
+                if (Time.time >= _nextSearchTime)
+                {
+                    FindClosestEnemyDataDriven();
+                    _nextSearchTime = Time.time + SEARCH_INTERVAL;
+                }
             }
-
-            // Saldırı Döngüsü
-            if (_currentTarget != null)
+            // 3. Saldırı Döngüsü
+            else 
             {
-                float distance = Vector3.Distance(transform.position, _currentTarget.position);
-                if (distance > _equippedWeapon.Range)
+                // --- OPTİMİZASYON: Distance yerine sqrMagnitude ---
+                float distSqr = (transform.position - _currentTarget.position).sqrMagnitude;
+                
+                // Menzil dışına çıktı mı? (100 > 100 karşılaştırması yapar, kök almaz)
+                if (distSqr > _sqrRange)
                 {
                     _currentTarget = null;
                     return;
                 }
 
-                // Karakteri hedefe döndür (Ancak hareket ediyorsak Mover scripti baskın çıkabilir)
                 RotateTowardsTarget();
 
-                // --- DEĞİŞİKLİK 3: Atış İzni Kontrolü ---
-                // Eğer silah "Hareketliyken Ateş Yasak" diyorsa VE karakter hareket ediyorsa: İPTAL ET.
+                // Hareket halindeyken ateş etme kontrolü
                 if (!_equippedWeapon.CanFireWhileMoving && _isMoving)
                 {
-                    return; // Buradan geri dön, aşağıdaki Attack() çalışmasın.
+                    return; 
                 }
 
-                // Zamanı geldiyse ateş et
                 if (Time.time >= _nextAttackTime)
                 {
                     Attack();
@@ -80,33 +89,25 @@ namespace IndianOceanAssets.Engine2_5D
             }
         }
 
-        /// <summary>
-        /// Fizik motoruna karakterin hızını sorar. En hatasız yöntemdir.
-        /// </summary>
         private void CheckMovementPhysics()
         {
             if (_rb != null)
             {
-                // Unity 6 (linearVelocity) kullanıyorsun, bu yüzden uyumlu yazdım.
-                // Eğer eski sürümde hata verirse 'linearVelocity' yerine 'velocity' yaz.
-                // 0.1f küçük bir tolerans payıdır (titremeleri önler).
-                _isMoving = _rb.linearVelocity.sqrMagnitude > 0.1f; 
-            }
-            else
-            {
-                // Yedek plan: Rigidbody yoksa eski yöntemi kullan
-                // (Ama senin projende ArcadeIdleMover olduğu için Rigidbody kesin vardır)
-                _isMoving = false; 
+                // Sadece hızı okuyoruz, işlemciye yükü yok denecek kadar azdır.
+                // Unity 6 için: linearVelocity, Eski sürümler için: velocity
+                #if UNITY_6000_0_OR_NEWER
+                _isMoving = _rb.linearVelocity.sqrMagnitude > 0.01f;
+                #else
+                _isMoving = _rb.velocity.sqrMagnitude > 0.01f;
+                #endif
             }
         }
-
-        // ... (Geri kalan kodlar AYNI kalacak: FindClosestEnemy, Rotate, Attack) ...
         
         private void FindClosestEnemyDataDriven()
         {
-            if (_equippedWeapon == null) return;
-
+            // NonAlloc kullanarak çöp (Garbage) oluşturmuyoruz
             int hitCount = Physics.OverlapSphereNonAlloc(transform.position, _equippedWeapon.Range, _hitBuffer, _enemyLayer);
+            
             Transform closestEnemy = null;
             float closestDistanceSqr = Mathf.Infinity;
             Vector3 currentPos = transform.position;
@@ -116,8 +117,9 @@ namespace IndianOceanAssets.Engine2_5D
                 Collider hit = _hitBuffer[i];
                 if (hit != null && hit.gameObject.activeInHierarchy && hit.CompareTag("Enemy"))
                 {
-                    Vector3 directionToTarget = hit.transform.position - currentPos;
-                    float dSqrToTarget = directionToTarget.sqrMagnitude;
+                    // Zaten elimizde hazır "Squared Magnitude" var, direkt kıyaslıyoruz
+                    float dSqrToTarget = (hit.transform.position - currentPos).sqrMagnitude;
+
                     if (dSqrToTarget < closestDistanceSqr)
                     {
                         closestDistanceSqr = dSqrToTarget;
@@ -130,8 +132,6 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void RotateTowardsTarget()
         {
-            // Eğer hareket ediyorsak ve nişan almamız yasaksa, karakterin hedefe dönmesini de engelleyebiliriz.
-            // Ama genelde koşarken de kafasını çevirmesi daha doğal durur. O yüzden burayı ellemiyoruz.
             if (_currentTarget == null) return;
 
             Vector3 direction = (_currentTarget.position - transform.position).normalized;
@@ -151,6 +151,8 @@ namespace IndianOceanAssets.Engine2_5D
             BasicProjectile projectile = _equippedWeapon.ProjectilePool.Get();
             projectile.transform.position = _firePoint.position;
             projectile.transform.rotation = Quaternion.LookRotation(_currentTarget.position - _firePoint.position);
+            
+            // Veri odaklı başlatma
             projectile.Initialize(_currentTarget, _equippedWeapon.ProjectilePool, _equippedWeapon);
         }
 
