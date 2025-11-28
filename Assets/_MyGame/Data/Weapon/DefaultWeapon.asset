@@ -20,7 +20,7 @@ MonoBehaviour:
   _damage: 10
   _rotationSpeed: 0
   _trackingMode: 1
-  _projectileSpeed: 10
+  _projectileSpeed: 20
   _projectileLifeTime: 5
   _projectilePool: {fileID: 11400000, guid: e9c24795c069d437ab153100808bb219, type: 2}
   _explosionPool: {fileID: 11400000, guid: 362344e764db340dc81250abb0233dab, type: 2}

@@ -507,6 +507,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyMoveTest
   _targetTag: Player
   _rotationSpeed: 0
+  _showDebugLogs: 1
 --- !u!1 &190183309
 GameObject:
   m_ObjectHideFlags: 0
