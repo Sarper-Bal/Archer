@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: MyExplosionPool
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.ExplosionPool
   MaxSize: 20
-  Behaviour: {fileID: -2270434888821036822, guid: f00c38ffa516d9b4d9e593f809bbf9df,
+  Behaviour: {fileID: -4303782911743058591, guid: f00c38ffa516d9b4d9e593f809bbf9df,
     type: 3}

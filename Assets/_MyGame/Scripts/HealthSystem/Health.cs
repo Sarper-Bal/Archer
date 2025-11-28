@@ -1,60 +1,73 @@
 using UnityEngine;
-using System; // Action eventleri için
+using System;
+using ArcadeBridge.ArcadeIdleEngine.Pools; // Eğer namespace farklıysa düzelt
 
 namespace IndianOceanAssets.Engine2_5D
 {
     public class Health : MonoBehaviour, IDamageable
     {
-        [Header("Can Ayarları")]
+        [Header("Varsayılan Ayarlar")]
+        [Tooltip("Eğer dışarıdan bir veri dosyası atanmazsa bu değer kullanılır.")]
         [SerializeField] private float _maxHealth = 100f;
-        [SerializeField] private bool _isInvincible = false; // Ölümsüzlük (God Mode)
+        [SerializeField] private bool _isInvincible = false;
 
         [Header("Görsel Efektler")]
-        [Tooltip("Bu karakter ölünce çalışacak efekt havuzu")]
-        [SerializeField] private DeathEffectPool _deathEffectPool;
+        [SerializeField] private DeathEffectPool _defaultDeathEffectPool;
         
-        // Private Değişkenler
         private float _currentHealth;
         private bool _isDead;
+        private DeathEffectPool _currentDeathPool; // O anki aktif havuz
 
-        // --- Eventler (Diğer sistemlerin dinlemesi için) ---
-        public event Action<float> OnHealthChanged; // (Kalan Can / Max Can) oranını gönderir (Health Bar için)
-        public event Action OnDeath;                // Öldüğünde tetiklenir
-        public event Action OnDamageTaken;          // Hasar alındığında tetiklenir (Kızarma efekti vb. için)
+        public event Action<float> OnHealthChanged;
+        public event Action OnDeath;
+        public event Action OnDamageTaken;
 
         public bool IsDead => _isDead;
         public float CurrentHealth => _currentHealth;
 
+        private void Awake()
+        {
+            // Başlangıçta varsayılan efekti kullan
+            _currentDeathPool = _defaultDeathEffectPool;
+        }
+
         private void OnEnable()
         {
+            // Obje havuza girip çıktığında canı resetle
             ResetHealth();
         }
 
+        // --- YENİ EKLENEN KISIM: DIŞARIDAN VERİ GİRİŞİ ---
         /// <summary>
-        /// Karakter yeniden doğduğunda veya havuzdan çıktığında canını fuller.
+        /// Silah veya Düşman verisinden gelen değerlerle Can sistemini kurar.
         /// </summary>
+        public void InitializeHealth(float newMaxHealth, DeathEffectPool deathPool = null)
+        {
+            _maxHealth = newMaxHealth; // Max canı güncelle
+            
+            if (deathPool != null)
+            {
+                _currentDeathPool = deathPool; // Düşmanın özel ölüm efekti varsa onu kullan
+            }
+
+            ResetHealth(); // Canı yeni değerle fulle
+        }
+        // -------------------------------------------------
+
         public void ResetHealth()
         {
             _currentHealth = _maxHealth;
             _isDead = false;
-            
-            // UI güncellemesi gönder (Can full)
-            OnHealthChanged?.Invoke(1f); 
+            OnHealthChanged?.Invoke(1f);
         }
 
-        // --- IDamageable Arayüzünden Gelen Metot ---
         public void TakeDamage(float amount)
         {
             if (_isDead || _isInvincible) return;
 
             _currentHealth -= amount;
-            
-            // Eventleri tetikle
             OnDamageTaken?.Invoke();
-            OnHealthChanged?.Invoke(_currentHealth / _maxHealth); // 0 ile 1 arası değer yollar
-
-            // Debug için log (İstersen kapatabilirsin)
-            // Debug.Log($"{gameObject.name} hasar aldı. Kalan Can: {_currentHealth}");
+            OnHealthChanged?.Invoke(_currentHealth / _maxHealth);
 
             if (_currentHealth <= 0)
             {
@@ -62,16 +75,11 @@ namespace IndianOceanAssets.Engine2_5D
             }
         }
 
-        /// <summary>
-        /// Can iyileştirme fonksiyonu (Potion vb. için)
-        /// </summary>
         public void Heal(float amount)
         {
             if (_isDead) return;
-
             _currentHealth += amount;
             if (_currentHealth > _maxHealth) _currentHealth = _maxHealth;
-
             OnHealthChanged?.Invoke(_currentHealth / _maxHealth);
         }
 
@@ -79,43 +87,28 @@ namespace IndianOceanAssets.Engine2_5D
         {
             if (_isDead) return;
             _isDead = true;
-
             OnDeath?.Invoke();
-
-            // 1. Ölüm Efektini Oynat (Pool Kullanarak)
             PlayDeathEffect();
 
-            // 2. Nesneyi Sahneden Kaldır
-            // Eğer bu bir oyuncuysa nesneyi kapatmak yerine "Game Over" ekranını çağırmalıyız.
             if (gameObject.CompareTag("Player"))
             {
-                Debug.Log("<color=red>OYUNCU ÖLDÜ! GAME OVER.</color>");
-                // Buraya LevelManager.GameOver() gibi bir kod gelecek.
-                // Şimdilik sadece render'ı kapatabiliriz veya animasyon oynatabiliriz.
+                Debug.Log("GAME OVER");
             }
             else
             {
-                // Düşmansa kendini kapatsın (Pool sistemi onu geri almış olur)
                 gameObject.SetActive(false);
             }
         }
 
         private void PlayDeathEffect()
         {
-            if (_deathEffectPool != null)
+            // Artık _currentDeathPool kullanıyoruz
+            if (_currentDeathPool != null)
             {
-                // Havuzdan efekt çek
-                var effect = _deathEffectPool.Get();
-                
-                // Pozisyonu ayarla (Biraz yukarıdan çıksın ki gövde ortalansın)
-                effect.transform.position = transform.position + Vector3.up * 1f;
+                var effect = _currentDeathPool.Get();
+                effect.transform.position = transform.position + Vector3.up;
                 effect.transform.rotation = Quaternion.identity;
-
-                // Efekti başlat (ExplosionEffect scripti süresi bitince havuza geri yollar)
-                effect.Initialize(_deathEffectPool); // Dikkat: ExplosionEffect parametre olarak ExplosionPool ister.
-                // UYARI: DeathEffectPool sınıfı ExplosionPool ile aynı T tipinde olmalı veya
-                // ExplosionEffect scriptini generic yapmalıyız. 
-                // PRATİK ÇÖZÜM: Aşağıdaki notu oku.
+                effect.Initialize(_currentDeathPool);
             }
         }
     }

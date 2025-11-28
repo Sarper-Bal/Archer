@@ -18,6 +18,22 @@ namespace IndianOceanAssets.Engine2_5D
         private float _nextAttackTime;
         private readonly Collider[] _hitBuffer = new Collider[20]; // Bellek dostu arama
 
+        // SimpleAutoAttacker.cs içine Start metodu ekle/güncelle:
+
+private void Start()
+{
+    // Silah verisi varsa, Can sistemini güncelle
+    if (_equippedWeapon != null)
+    {
+        var health = GetComponent<Health>();
+        if (health != null)
+        {
+            // Silahın içindeki PlayerMaxHealth değerini Health scriptine gönder
+            health.InitializeHealth(_equippedWeapon.PlayerMaxHealth);
+        }
+    }
+}
+
         private void Update()
         {
             // Eğer silah takılı değilse hiçbir şey yapma

@@ -336,6 +336,7 @@ GameObject:
   - component: {fileID: 184907960}
   - component: {fileID: 184907959}
   - component: {fileID: 184907962}
+  - component: {fileID: 184907963}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Enemy
@@ -449,7 +450,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Health
   _maxHealth: 10
   _isInvincible: 0
-  _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
+  _defaultDeathEffectPool: {fileID: 0}
+--- !u!114 &184907963
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184907957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1da0e1c5aafa54657bb5b00807501dcd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyStats
+  _enemyDefinition: {fileID: 11400000, guid: 552672598014c46da97f48a0e13b1806, type: 2}
 --- !u!1 &190183309
 GameObject:
   m_ObjectHideFlags: 0
@@ -1430,7 +1444,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Health
   _maxHealth: 10
   _isInvincible: 0
-  _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
+  _defaultDeathEffectPool: {fileID: 0}
 --- !u!65 &409211188
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1654,7 +1668,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Health
   _maxHealth: 10
   _isInvincible: 0
-  _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
+  _defaultDeathEffectPool: {fileID: 0}
 --- !u!65 &442687052
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -4834,7 +4848,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Health
   _maxHealth: 10
   _isInvincible: 0
-  _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
+  _defaultDeathEffectPool: {fileID: 0}
 --- !u!65 &1549841703
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -5470,7 +5484,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Health
   _maxHealth: 10
   _isInvincible: 0
-  _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
+  _defaultDeathEffectPool: {fileID: 0}
 --- !u!65 &1751140975
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -7545,7 +7559,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Health
   _maxHealth: 100
   _isInvincible: 0
-  _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
+  _defaultDeathEffectPool: {fileID: 0}
 --- !u!114 &6859842002472669151
 MonoBehaviour:
   m_ObjectHideFlags: 0
