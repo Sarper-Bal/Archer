@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyDefinition
   _enemyName: def
   _maxHealth: 20
-  _moveSpeed: 1
-  _contactDamage: 5
+  _moveSpeed: 3
+  _contactDamage: 20
   _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
