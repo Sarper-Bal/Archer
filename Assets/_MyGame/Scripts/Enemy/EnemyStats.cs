@@ -9,6 +9,9 @@ namespace IndianOceanAssets.Engine2_5D
 
         private Health _health;
 
+        // --- KRİTİK EKLEME: AI'nın veriye ulaşması için bu satır ŞART ---
+        public EnemyDefinition Definition => _enemyDefinition; 
+
         private void Awake()
         {
             _health = GetComponent<Health>();
@@ -18,7 +21,6 @@ namespace IndianOceanAssets.Engine2_5D
         {
             if (_enemyDefinition != null && _health != null)
             {
-                // Düşman doğduğunda (havuzdan çıkınca), verisindeki canı ve efekt havuzunu yükle
                 _health.InitializeHealth(_enemyDefinition.MaxHealth, _enemyDefinition.DeathEffectPool);
             }
         }

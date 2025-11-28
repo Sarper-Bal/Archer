@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b7d6576be00a4cb2ab0f4572fbf327c, type: 3}
   m_Name: DefaultEnemy
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyDefinition
-  _enemyName: 
+  _enemyName: def
   _maxHealth: 20
-  _moveSpeed: 3
+  _moveSpeed: 1
   _contactDamage: 5
   _deathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}

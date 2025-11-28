@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DefaultWeapon
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.WeaponDefinition
   _weaponName: Basic
-  _playerMaxHealth: 100
+  _playerMaxHealth: 20
   _canFireWhileMoving: 0
   _range: 10
   _attacksPerSecond: 1
