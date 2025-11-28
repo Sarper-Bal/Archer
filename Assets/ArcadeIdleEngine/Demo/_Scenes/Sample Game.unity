@@ -339,6 +339,7 @@ GameObject:
   - component: {fileID: 184907962}
   - component: {fileID: 184907963}
   - component: {fileID: 184907966}
+  - component: {fileID: 184907967}
   m_Layer: 6
   m_Name: Cube
   m_TagString: Enemy
@@ -500,7 +501,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 184907957}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d34454f7b8564566878628f777ad8d2, type: 3}
   m_Name: 
@@ -508,6 +509,22 @@ MonoBehaviour:
   _targetTag: Player
   _rotationSpeed: 0
   _showDebugLogs: 1
+--- !u!114 &184907967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184907957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 053e5ada5177748b9a018beb2bc08431, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Experimental.StalkerEnemyMover
+  _targetTag: Player
+  _rotationSpeed: 0
+  _arrivalDistance: 0.5
+  _showDebugGizmos: 1
 --- !u!1 &190183309
 GameObject:
   m_ObjectHideFlags: 0
