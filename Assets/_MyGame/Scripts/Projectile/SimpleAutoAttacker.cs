@@ -6,60 +6,72 @@ namespace IndianOceanAssets.Engine2_5D
     public class SimpleAutoAttacker : MonoBehaviour
     {
         [Header("Silah Kurulumu")]
-        [Tooltip("Veri klasöründe oluşturduğun Silah Verisini (ScriptableObject) buraya sürükle.")]
         [SerializeField] private WeaponDefinition _equippedWeapon;
 
         [Header("Bağlantılar")]
-        [SerializeField] private Transform _firePoint;  // Okun çıkacağı nokta
-        [SerializeField] private LayerMask _enemyLayer; // Düşman katmanı (Sadece Enemy seçili olsun)
+        [SerializeField] private Transform _firePoint;  
+        [SerializeField] private LayerMask _enemyLayer; 
 
-        // Private Değişkenler
+        // --- DEĞİŞİKLİK 1: Rigidbody Referansı ---
+        private Rigidbody _rb; 
+        
         private Transform _currentTarget;
         private float _nextAttackTime;
-        private readonly Collider[] _hitBuffer = new Collider[20]; // Bellek dostu arama
+        private readonly Collider[] _hitBuffer = new Collider[20];
+        private bool _isMoving;
 
-        // SimpleAutoAttacker.cs içine Start metodu ekle/güncelle:
-
-private void Start()
-{
-    // Silah verisi varsa, Can sistemini güncelle
-    if (_equippedWeapon != null)
-    {
-        var health = GetComponent<Health>();
-        if (health != null)
+        private void Awake()
         {
-            // Silahın içindeki PlayerMaxHealth değerini Health scriptine gönder
-            health.InitializeHealth(_equippedWeapon.PlayerMaxHealth);
+            // Karakterin fizik bileşenini alıyoruz (En güvenilir hareket kaynağı)
+            _rb = GetComponent<Rigidbody>();
         }
-    }
-}
+
+        private void Start()
+        {
+            if (_equippedWeapon != null)
+            {
+                var health = GetComponent<Health>();
+                if (health != null)
+                {
+                    health.InitializeHealth(_equippedWeapon.PlayerMaxHealth);
+                }
+            }
+        }
 
         private void Update()
         {
-            // Eğer silah takılı değilse hiçbir şey yapma
             if (_equippedWeapon == null) return;
 
-            // 1. Hedef Kontrolü: Hedef yoksa veya öldüyse yenisini ara
+            // --- DEĞİŞİKLİK 2: Kesin Hareket Kontrolü ---
+            CheckMovementPhysics();
+
+            // Hedef Kontrolü
             if (_currentTarget == null || !_currentTarget.gameObject.activeInHierarchy)
             {
                 FindClosestEnemyDataDriven();
             }
 
-            // 2. Saldırı Döngüsü
+            // Saldırı Döngüsü
             if (_currentTarget != null)
             {
-                // Menzil Kontrolü (Veri dosyasından okunuyor)
                 float distance = Vector3.Distance(transform.position, _currentTarget.position);
                 if (distance > _equippedWeapon.Range)
                 {
-                    _currentTarget = null; // Hedef çok uzaklaştı, bırak
+                    _currentTarget = null;
                     return;
                 }
 
-                // Hedefe Dön
+                // Karakteri hedefe döndür (Ancak hareket ediyorsak Mover scripti baskın çıkabilir)
                 RotateTowardsTarget();
 
-                // Saldırı Hızı Kontrolü (Veri dosyasından okunuyor)
+                // --- DEĞİŞİKLİK 3: Atış İzni Kontrolü ---
+                // Eğer silah "Hareketliyken Ateş Yasak" diyorsa VE karakter hareket ediyorsa: İPTAL ET.
+                if (!_equippedWeapon.CanFireWhileMoving && _isMoving)
+                {
+                    return; // Buradan geri dön, aşağıdaki Attack() çalışmasın.
+                }
+
+                // Zamanı geldiyse ateş et
                 if (Time.time >= _nextAttackTime)
                 {
                     Attack();
@@ -68,13 +80,33 @@ private void Start()
             }
         }
 
+        /// <summary>
+        /// Fizik motoruna karakterin hızını sorar. En hatasız yöntemdir.
+        /// </summary>
+        private void CheckMovementPhysics()
+        {
+            if (_rb != null)
+            {
+                // Unity 6 (linearVelocity) kullanıyorsun, bu yüzden uyumlu yazdım.
+                // Eğer eski sürümde hata verirse 'linearVelocity' yerine 'velocity' yaz.
+                // 0.1f küçük bir tolerans payıdır (titremeleri önler).
+                _isMoving = _rb.linearVelocity.sqrMagnitude > 0.1f; 
+            }
+            else
+            {
+                // Yedek plan: Rigidbody yoksa eski yöntemi kullan
+                // (Ama senin projende ArcadeIdleMover olduğu için Rigidbody kesin vardır)
+                _isMoving = false; 
+            }
+        }
+
+        // ... (Geri kalan kodlar AYNI kalacak: FindClosestEnemy, Rotate, Attack) ...
+        
         private void FindClosestEnemyDataDriven()
         {
             if (_equippedWeapon == null) return;
 
-            // Physics.OverlapSphereNonAlloc ile optimize arama (Menzil verisi silahtan geliyor)
             int hitCount = Physics.OverlapSphereNonAlloc(transform.position, _equippedWeapon.Range, _hitBuffer, _enemyLayer);
-
             Transform closestEnemy = null;
             float closestDistanceSqr = Mathf.Infinity;
             Vector3 currentPos = transform.position;
@@ -82,19 +114,14 @@ private void Start()
             for (int i = 0; i < hitCount; i++)
             {
                 Collider hit = _hitBuffer[i];
-                if (hit != null && hit.gameObject.activeInHierarchy)
+                if (hit != null && hit.gameObject.activeInHierarchy && hit.CompareTag("Enemy"))
                 {
-                    // Ekstra güvenlik: Tag kontrolü
-                    if (hit.CompareTag("Enemy"))
+                    Vector3 directionToTarget = hit.transform.position - currentPos;
+                    float dSqrToTarget = directionToTarget.sqrMagnitude;
+                    if (dSqrToTarget < closestDistanceSqr)
                     {
-                        Vector3 directionToTarget = hit.transform.position - currentPos;
-                        float dSqrToTarget = directionToTarget.sqrMagnitude;
-
-                        if (dSqrToTarget < closestDistanceSqr)
-                        {
-                            closestDistanceSqr = dSqrToTarget;
-                            closestEnemy = hit.transform;
-                        }
+                        closestDistanceSqr = dSqrToTarget;
+                        closestEnemy = hit.transform;
                     }
                 }
             }
@@ -103,39 +130,30 @@ private void Start()
 
         private void RotateTowardsTarget()
         {
+            // Eğer hareket ediyorsak ve nişan almamız yasaksa, karakterin hedefe dönmesini de engelleyebiliriz.
+            // Ama genelde koşarken de kafasını çevirmesi daha doğal durur. O yüzden burayı ellemiyoruz.
             if (_currentTarget == null) return;
 
             Vector3 direction = (_currentTarget.position - transform.position).normalized;
-            direction.y = 0; // Sadece Y ekseninde dön (Karakter eğilmesin)
+            direction.y = 0; 
 
             if (direction != Vector3.zero)
             {
                 Quaternion lookRotation = Quaternion.LookRotation(direction);
-                // Dönüş hızı silahtan geliyor (Ağır silahlar yavaş dönebilir)
                 transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * _equippedWeapon.RotationSpeed);
             }
         }
 
         private void Attack()
         {
-            if (_equippedWeapon.ProjectilePool == null)
-            {
-                Debug.LogError($"HATA: '{_equippedWeapon.name}' adlı silah verisinde Mermi Havuzu (Projectile Pool) atanmamış!");
-                return;
-            }
+            if (_equippedWeapon.ProjectilePool == null) return;
 
-            // 1. Havuzdan mermi çek (Verideki havuzu kullan)
             BasicProjectile projectile = _equippedWeapon.ProjectilePool.Get();
-            
-            // 2. Pozisyon ve Açı
             projectile.transform.position = _firePoint.position;
             projectile.transform.rotation = Quaternion.LookRotation(_currentTarget.position - _firePoint.position);
-
-            // 3. Mermiyi Başlat (Hasar verisini de gönder)
-            projectile.Initialize(_currentTarget, _equippedWeapon.ProjectilePool, _equippedWeapon.Damage);
+            projectile.Initialize(_currentTarget, _equippedWeapon.ProjectilePool, _equippedWeapon);
         }
 
-        // Editörde menzili görmek için
         private void OnDrawGizmosSelected()
         {
             if (_equippedWeapon != null)
