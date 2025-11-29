@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DefaultEnemy
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyDefinition
   MoveSpeed: 5
-  MaxHealth: 20
+  MaxHealth: 10
   ContactDamage: 19
   _defaultBehavior: 1
   PatrolRouteID: {fileID: 11400000, guid: 2feae313691fd4cd5b2e3e832ea56c04, type: 2}

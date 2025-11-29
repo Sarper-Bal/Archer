@@ -24,7 +24,7 @@ MonoBehaviour:
   _projectileLifeTime: 5
   _projectilePool: {fileID: 11400000, guid: e9c24795c069d437ab153100808bb219, type: 2}
   _explosionPool: {fileID: 11400000, guid: 362344e764db340dc81250abb0233dab, type: 2}
-  _explosionRadius: 0.5
+  _explosionRadius: 1
   _damageLayer:
     serializedVersion: 2
     m_Bits: 64
