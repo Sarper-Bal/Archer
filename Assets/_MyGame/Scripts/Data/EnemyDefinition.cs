@@ -1,28 +1,35 @@
 using UnityEngine;
 using ArcadeBridge.ArcadeIdleEngine.Pools;
+using ArcadeBridge.ArcadeIdleEngine.Enemy; // RouteID için
 
 namespace IndianOceanAssets.Engine2_5D
 {
-    // Düşman verilerini (Can, Hız, Hasar) tutan dosya
-    [CreateAssetMenu(fileName = "NewEnemy", menuName = "Arcade Idle/Combat/Enemy Definition")]
+    public enum EnemyBehaviorType
+    {
+        None,
+        SimpleChaser,
+        Stalker,
+        Patrol // Waypoint
+    }
+
+    [CreateAssetMenu(fileName = "NewEnemyDefinition", menuName = "MyGame/Enemy Definition")]
     public class EnemyDefinition : ScriptableObject
     {
-        [Header("Temel Özellikler")]
-        [SerializeField] private string _enemyName;
-        [SerializeField] private float _maxHealth = 50f; // Düşmanın Canı
-        [SerializeField] private float _moveSpeed = 3f;  // Düşmanın Hızı
+        [Header("Temel İstatistikler")]
+        public float MoveSpeed = 5f;
+        public float MaxHealth = 100f;
+        public float ContactDamage = 10f;
+
+        [Header("Yapay Zeka (AI)")]
+        [SerializeField] private EnemyBehaviorType _defaultBehavior = EnemyBehaviorType.SimpleChaser;
         
-        [Header("Saldırı")]
-        [SerializeField] private float _contactDamage = 5f; // Oyuncuya çarpınca vereceği hasar
+        // [GÜNCELLEME] Yeni özellik: Hangi yolu izleyecek?
+        [Tooltip("Eğer davranış 'Patrol' ise, sahnede bu ID'ye sahip yolu arar.")]
+        public RouteID PatrolRouteID; 
 
-        [Header("Efektler")]
-        [Tooltip("Bu düşman ölünce kullanılacak efekt havuzu (Opsiyonel)")]
-        [SerializeField] private DeathEffectPool _deathEffectPool;
+        [Header("Görsel & Efekt")]
+        public DeathEffectPool DeathEffectPool; 
 
-        // --- Erişimciler ---
-        public float MaxHealth => _maxHealth;
-        public float MoveSpeed => _moveSpeed;
-        public float ContactDamage => _contactDamage;
-        public DeathEffectPool DeathEffectPool => _deathEffectPool;
+        public EnemyBehaviorType DefaultBehavior => _defaultBehavior;
     }
 }

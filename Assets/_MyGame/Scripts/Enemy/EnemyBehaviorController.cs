@@ -1,89 +1,87 @@
 using UnityEngine;
 using ArcadeBridge.ArcadeIdleEngine.Experimental; // Stalker için
-using ArcadeBridge.ArcadeIdleEngine.Enemy; // Simple ve Waypoint için
+using ArcadeBridge.ArcadeIdleEngine.Enemy; // Waypoint için
 
-namespace IndianOceanAssets.Engine2_5D // Veya senin ana namespace'in
+namespace IndianOceanAssets.Engine2_5D
 {
+    [RequireComponent(typeof(EnemyStats))]
     public class EnemyBehaviorController : MonoBehaviour
     {
-        // Davranış Seçenekleri
-        public enum EnemyBehaviorType
-        {
-            None,           // Hareketsiz (Dummy)
-            SimpleChaser,   // Basit Takip (SimpleEnemyMover)
-            Stalker,        // Zeki Takip (StalkerEnemyMover)
-            Patrol          // Devriye (WaypointEnemyMover)
-        }
+        // [DEĞİŞİKLİK] Artık burada "Starting Behavior" ayarı yok.
+        // Veri tamamen EnemyStats -> EnemyDefinition'dan geliyor.
 
-        [Header("Davranış Ayarları")]
-        [Tooltip("Bu düşman hangi zekayı kullanacak?")]
-        [SerializeField] private EnemyBehaviorType _startingBehavior = EnemyBehaviorType.SimpleChaser;
+        [Header("Debug Bilgisi (Sadece Okunabilir)")]
+        [SerializeField] private EnemyBehaviorType _currentBehavior; // Test ederken görmen için
 
-        // Script Referansları (Otomatik Bulunacak)
+        // Script Referansları
+        private EnemyStats _stats;
         private SimpleEnemyMover _simpleMover;
         private StalkerEnemyMover _stalkerMover;
         private WaypointEnemyMover _waypointMover;
 
         private void Awake()
         {
-            // Tüm beyinleri üzerimden topla
+            _stats = GetComponent<EnemyStats>();
+            
             _simpleMover = GetComponent<SimpleEnemyMover>();
             _stalkerMover = GetComponent<StalkerEnemyMover>();
             _waypointMover = GetComponent<WaypointEnemyMover>();
 
-            // Hata Kontrolü: Scriptler eksikse uyar
-            if (_simpleMover == null) Debug.LogWarning($"{name}: SimpleEnemyMover eksik!");
-            if (_stalkerMover == null) Debug.LogWarning($"{name}: StalkerEnemyMover eksik!");
-            if (_waypointMover == null) Debug.LogWarning($"{name}: WaypointEnemyMover eksik!");
+            // Güvenlik kontrolü
+            if (_simpleMover == null) Debug.LogWarning($"{name}: SimpleMover eksik!");
         }
 
         private void OnEnable()
         {
-            // Düşman her doğduğunda (Pool'dan çıktığında) seçili davranışı uygula
-            SetBehavior(_startingBehavior);
+            // Düşman doğduğunda (veya havuzdan çıktığında)
+            // Veri dosyasındaki "DefaultBehavior" ne ise onu uygula.
+            if (_stats != null && _stats.Definition != null)
+            {
+                SetBehavior(_stats.Definition.DefaultBehavior);
+            }
+            else
+            {
+                // Veri yoksa güvenli modda aç (Hata vermesin)
+                SetBehavior(EnemyBehaviorType.SimpleChaser);
+                Debug.LogWarning($"{name}: EnemyDefinition bulunamadı, varsayılan SimpleChaser açıldı.");
+            }
         }
 
-        /// <summary>
-        /// Dışarıdan (Spawner veya Kod ile) davranışı değiştirmek için kullanılır.
-        /// </summary>
         public void SetBehavior(EnemyBehaviorType newBehavior)
         {
-            _startingBehavior = newBehavior;
+            _currentBehavior = newBehavior; // Debug için güncelle
 
-            // 1. Önce hepsini kapat (Temiz sayfa)
+            // 1. Temiz Sayfa: Hepsini kapat
             DisableAllBehaviors();
 
-            // 2. Seçili olanı aç
+            // 2. İstenileni Aç
             switch (newBehavior)
             {
                 case EnemyBehaviorType.SimpleChaser:
-                    if (_simpleMover != null) _simpleMover.enabled = true;
+                    if (_simpleMover) _simpleMover.enabled = true;
                     break;
 
                 case EnemyBehaviorType.Stalker:
-                    if (_stalkerMover != null) _stalkerMover.enabled = true;
+                    if (_stalkerMover) _stalkerMover.enabled = true;
                     break;
 
                 case EnemyBehaviorType.Patrol:
-                    if (_waypointMover != null) _waypointMover.enabled = true;
+                    if (_waypointMover) _waypointMover.enabled = true;
                     break;
                 
                 case EnemyBehaviorType.None:
-                    // Hepsi kapalı kalsın
+                    // Hepsi kapalı kalır
                     break;
             }
         }
 
-        /// <summary>
-        /// Tüm hareket scriptlerini devre dışı bırakır.
-        /// </summary>
         private void DisableAllBehaviors()
         {
-            if (_simpleMover != null) _simpleMover.enabled = false;
-            if (_stalkerMover != null) _stalkerMover.enabled = false;
-            if (_waypointMover != null) _waypointMover.enabled = false;
-            
-            // Eğer fiziksel bir hız kaldıysa sıfırla (Kaymayı önle)
+            if (_simpleMover) _simpleMover.enabled = false;
+            if (_stalkerMover) _stalkerMover.enabled = false;
+            if (_waypointMover) _waypointMover.enabled = false;
+
+            // Hızı sıfırla (Kaymayı önle)
             var rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
@@ -95,26 +93,14 @@ namespace IndianOceanAssets.Engine2_5D // Veya senin ana namespace'in
             }
         }
         
-        // Waypoint sistemi için özel bir yardımcı fonksiyon
-        // Spawner'dan yol atamak istersek bu köprüyü kullanacağız.
+        // Spawner'dan devriye yolu atandığında otomatik geçiş için yardımcı metod
         public void SetPatrolRoute(WaypointRoute route)
         {
             if (_waypointMover != null)
             {
                 _waypointMover.SetRoute(route);
-                SetBehavior(EnemyBehaviorType.Patrol); // Otomatik olarak Patrol moduna geçir
+                SetBehavior(EnemyBehaviorType.Patrol);
             }
         }
-        
-#if UNITY_EDITOR
-        // Editörde değer değiştirdiğimizde anlık tepki versin (Debug için)
-        private void OnValidate()
-        {
-            if (Application.isPlaying)
-            {
-                SetBehavior(_startingBehavior);
-            }
-        }
-#endif
     }
 }

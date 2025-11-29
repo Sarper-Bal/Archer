@@ -1,5 +1,6 @@
 using UnityEngine;
-using IndianOceanAssets.Engine2_5D; // EnemyStats için
+using IndianOceanAssets.Engine2_5D;
+using ArcadeBridge.ArcadeIdleEngine.Managers;
 
 namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 {
@@ -8,19 +9,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
     public class WaypointEnemyMover : MonoBehaviour
     {
         [Header("Yol Ayarları")]
-        [SerializeField] private WaypointRoute _route; // Hangi yolu izleyecek?
+        [SerializeField] private WaypointRoute _manualRoute; 
         [SerializeField] private float _rotationSpeed = 8f;
         [SerializeField] private float _arrivalDistance = 0.5f;
-        [SerializeField] private bool _loopPath = true; // Yol bitince başa dönsün mü?
+        [SerializeField] private bool _loopPath = true;
 
-        [Header("Debug")]
-        [SerializeField] private bool _showDebugLogs = false;
-
-        // Bileşenler
         private Rigidbody _rb;
         private EnemyStats _stats;
+        private WaypointRoute _activeRoute;
 
-        // Mantık Değişkenleri
         private int _currentWaypointIndex = 0;
         private Transform _currentTargetPoint;
         private float _arrivalDistanceSqr;
@@ -30,27 +27,68 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
         {
             _rb = GetComponent<Rigidbody>();
             _stats = GetComponent<EnemyStats>();
-
-            // Fizik Ayarları (Optimizasyon)
+            
             _rb.useGravity = true;
             _rb.isKinematic = false;
             _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // [OPTİMİZASYON] Karekök işleminden kaçınmak için
             _arrivalDistanceSqr = _arrivalDistance * _arrivalDistance;
         }
 
         private void OnEnable()
         {
+            // Havuzdan çıktığında hemen bulmaya çalış
+            ResolveRoute(); 
             ResetPath();
+        }
+
+        // [DÜZELTME] Start ekledik.
+        // Eğer oyunun en başında OnEnable çalıştığında "RouteManager" henüz hazır değilse,
+        // Yol bulunamamış olabilir. Start fonksiyonu her şey yüklendikten sonra çalışır.
+        private void Start()
+        {
+            if (_activeRoute == null)
+            {
+                ResolveRoute();
+                ResetPath();
+            }
+        }
+
+        private void ResolveRoute()
+        {
+            // Eğer zaten bulduysam tekrar arama (Optimizasyon)
+            if (_activeRoute != null) return;
+
+            // 1. Manuel atama (Inspector)
+            if (_manualRoute != null)
+            {
+                _activeRoute = _manualRoute;
+                return;
+            }
+
+            // 2. Data-Driven ID ile arama
+            if (_stats.Definition != null && _stats.Definition.PatrolRouteID != null)
+            {
+                if (RouteManager.Instance != null)
+                {
+                    _activeRoute = RouteManager.Instance.GetRoute(_stats.Definition.PatrolRouteID);
+                }
+            }
         }
 
         private void FixedUpdate()
         {
+            // Hala yol yoksa yapacak bir şey yok, bekle
+            if (_activeRoute == null)
+            {
+                // [EKSTRA KORUMA] Belki yönetici geç yüklendi, arada bir tekrar sor?
+                // Performans için burayı her karede çağırmıyoruz, Start'ta halledilmiş olmalı.
+                return;
+            }
+
             if (_isPathComplete || _currentTargetPoint == null || _stats.Definition == null) 
             {
-                // Dur
                 #if UNITY_6000_0_OR_NEWER
                 _rb.linearVelocity = new Vector3(0, _rb.linearVelocity.y, 0);
                 #else
@@ -65,32 +103,30 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 
         private void MoveAlongPath()
         {
-            // Hedefe giden vektör (Y eksenini yoksay)
             Vector3 direction = (_currentTargetPoint.position - transform.position).normalized;
             direction.y = 0;
 
             if (direction != Vector3.zero)
             {
-                // Dönüş
                 Quaternion lookRotation = Quaternion.LookRotation(direction);
                 _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, lookRotation, _rotationSpeed * Time.fixedDeltaTime));
 
-                // Hareket
-                Vector3 moveVelocity = direction * _stats.Definition.MoveSpeed;
-
-                #if UNITY_6000_0_OR_NEWER
-                moveVelocity.y = _rb.linearVelocity.y; // Yerçekimini koru
-                _rb.linearVelocity = moveVelocity;
-                #else
-                moveVelocity.y = _rb.velocity.y;
-                _rb.velocity = moveVelocity;
-                #endif
+                if (_stats.Definition != null)
+                {
+                    Vector3 moveVelocity = direction * _stats.Definition.MoveSpeed;
+                    #if UNITY_6000_0_OR_NEWER
+                    moveVelocity.y = _rb.linearVelocity.y;
+                    _rb.linearVelocity = moveVelocity;
+                    #else
+                    moveVelocity.y = _rb.velocity.y;
+                    _rb.velocity = moveVelocity;
+                    #endif
+                }
             }
         }
 
         private void CheckArrival()
         {
-            // [OPTİMİZASYON] sqrMagnitude kullanımı
             float dx = transform.position.x - _currentTargetPoint.position.x;
             float dz = transform.position.z - _currentTargetPoint.position.z;
             float distSqr = (dx * dx) + (dz * dz);
@@ -105,34 +141,29 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
         {
             _currentWaypointIndex++;
 
-            // Listenin sonuna geldik mi?
-            if (_currentWaypointIndex >= _route.Waypoints.Count)
+            if (_activeRoute != null && _currentWaypointIndex >= _activeRoute.Waypoints.Count)
             {
                 if (_loopPath)
                 {
-                    _currentWaypointIndex = 0; // Başa dön
-                    if (_showDebugLogs) Debug.Log($"{name}: Yol bitti, başa dönülüyor.");
+                    _currentWaypointIndex = 0;
                 }
                 else
                 {
-                    _isPathComplete = true; // Dur
+                    _isPathComplete = true;
                     _currentTargetPoint = null;
-                    if (_showDebugLogs) Debug.Log($"{name}: Yol tamamlandı.");
                     return;
                 }
             }
 
-            _currentTargetPoint = _route.Waypoints[_currentWaypointIndex];
+            if (_activeRoute != null && _activeRoute.Waypoints.Count > 0)
+                _currentTargetPoint = _activeRoute.Waypoints[_currentWaypointIndex];
         }
 
-        // --- PUBLIC API (Spawnerlar kullanabilir) ---
-        
-        /// <summary>
-        /// Düşmana dışarıdan yeni bir rota atamak için kullanılır.
-        /// </summary>
         public void SetRoute(WaypointRoute newRoute)
         {
-            _route = newRoute;
+            _manualRoute = newRoute;
+            _activeRoute = null; // Sıfırla ki Resolve tekrar çalışsın
+            ResolveRoute();
             ResetPath();
         }
 
@@ -141,40 +172,32 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
             _isPathComplete = false;
             _currentWaypointIndex = 0;
 
-            if (_route != null && _route.Waypoints.Count > 0)
+            if (_activeRoute != null && _activeRoute.Waypoints.Count > 0)
             {
-                _currentTargetPoint = _route.Waypoints[0];
-                // İsteğe bağlı: Düşmanı direkt ilk noktaya ışınla
-                // transform.position = _currentTargetPoint.position; 
+                _currentTargetPoint = _activeRoute.Waypoints[0];
             }
             else
             {
-                _isPathComplete = true; // Rota yoksa hareket etme
+                _isPathComplete = true;
             }
         }
         
-        // Çarpışma ve Hasar Mantığı (Diğer scriptlerle aynı)
         private void OnCollisionEnter(Collision collision)
         {
-            if (collision.gameObject.CompareTag("Player"))
-            {
-                if (_stats.Definition != null)
-                {
-                     if (collision.gameObject.TryGetComponent(out IDamageable damageable))
+             if (collision.gameObject.CompareTag("Player") && _stats.Definition != null)
+             {
+                 if (collision.gameObject.TryGetComponent(out IDamageable damageable))
+                 {
+                     damageable.TakeDamage(_stats.Definition.ContactDamage);
+                     if (_stats.Definition.DeathEffectPool != null)
                      {
-                         damageable.TakeDamage(_stats.Definition.ContactDamage);
-                         
-                         // Efekt ve Ölüm (Pooling)
-                         if (_stats.Definition.DeathEffectPool != null)
-                         {
-                             var effect = _stats.Definition.DeathEffectPool.Get();
-                             effect.transform.position = transform.position;
-                             effect.Initialize(_stats.Definition.DeathEffectPool);
-                         }
-                         gameObject.SetActive(false);
+                         var effect = _stats.Definition.DeathEffectPool.Get();
+                         effect.transform.position = transform.position;
+                         effect.Initialize(_stats.Definition.DeathEffectPool);
                      }
-                }
-            }
+                     gameObject.SetActive(false);
+                 }
+             }
         }
     }
 }
