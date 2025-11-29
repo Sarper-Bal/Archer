@@ -1,9 +1,9 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using IndianOceanAssets.Engine2_5D; // EnemyBehaviorController için
-using IndianOceanAssets.Engine2_5D.Spawners; // Veri yapıları için
-using ArcadeBridge.ArcadeIdleEngine.Enemy; // Route için
+using IndianOceanAssets.Engine2_5D; 
+using IndianOceanAssets.Engine2_5D.Spawners; 
+using ArcadeBridge.ArcadeIdleEngine.Enemy; 
 
 namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 {
@@ -19,17 +19,24 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         [Header("Durum (Debug)")]
         [SerializeField] private int _currentWaveIndex = 0;
         [SerializeField] private bool _isSpawning = false;
-        [SerializeField] private bool _waitingForCleave = false; // Düşmanların ölmesini mi bekliyor?
+        [SerializeField] private bool _waitingForCleave = false;
         
         // Aktif düşmanları takip listesi
         private List<EnemyBehaviorController> _activeEnemies = new List<EnemyBehaviorController>();
 
-        // Dışarıdan erişim eventleri (UI için harika olur: "Wave 1 Başladı!" yazısı gibi)
-        public System.Action<int, int> OnWaveChanged; // (Mevcut Dalga, Toplam Dalga)
+        // [OPTİMİZASYON 1] Çöp oluşumunu (GC) engellemek için cache'lenmiş bekleme objeleri
+        private WaitForSeconds _checkInterval; 
+        private WaitForSeconds _groupDelay;
+
+        // Eventler
+        public System.Action<int, int> OnWaveChanged; 
         public System.Action OnAllWavesComplete;
 
         private void Start()
         {
+            // [OPTİMİZASYON 1] Objeleri sadece oyun başında 1 kere yarat
+            _checkInterval = new WaitForSeconds(0.5f); 
+
             if (_waveConfig != null)
             {
                 StartCoroutine(ProcessWaves());
@@ -42,27 +49,30 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
             while (true)
             {
-                // Config bitti mi?
+                // Config bitti mi kontrolü
                 if (_currentWaveIndex >= _waveConfig.Waves.Count)
                 {
                     if (_waveConfig.LoopWaves)
                     {
-                        _currentWaveIndex = 0; // Başa dön
+                        _currentWaveIndex = 0; 
                     }
                     else
                     {
                         Debug.Log("🎉 Tüm dalgalar tamamlandı!");
                         OnAllWavesComplete?.Invoke();
-                        yield break; // Coroutine'i bitir
+                        yield break; 
                     }
                 }
 
-                // --- DALGA BAŞLIYOR ---
                 WaveDefinition currentWave = _waveConfig.Waves[_currentWaveIndex];
                 OnWaveChanged?.Invoke(_currentWaveIndex + 1, _waveConfig.Waves.Count);
+                
+                // [OPTİMİZASYON 2] Yeni dalga başlamadan önce listeyi temizle (Toplu Temizlik)
+                CleanupDeadEnemiesImmediately(); 
+
                 Debug.Log($"🌊 Dalga Başladı: {currentWave.WaveName}");
 
-                // 1. Grupları Üret
+                // 1. Düşmanları Üret
                 _isSpawning = true;
                 foreach (var group in currentWave.Groups)
                 {
@@ -70,22 +80,24 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
                 }
                 _isSpawning = false;
 
-                // 2. Bekleme Mantığı (Hepsi ölsün mü?)
+                // 2. Bekleme Mantığı (Ultra Optimize)
                 if (currentWave.WaitForAllDead)
                 {
                     _waitingForCleave = true;
-                    // Listede canlı düşman kaldığı sürece bekle
-                    while (HasActiveEnemies())
+                    
+                    // Döngü içinde listeyi modifiye etmiyoruz (RemoveAt yok).
+                    // Sadece "Hala yaşayan var mı?" diye soruyoruz. Bu çok hızlıdır.
+                    while (IsAnyEnemyAlive())
                     {
-                        yield return new WaitForSeconds(0.5f); // Optimizasyon: Her frame değil, yarım saniyede bir kontrol et
+                        // Cachelenmiş wait kullanımı (Sıfır GC)
+                        yield return _checkInterval; 
                     }
                     _waitingForCleave = false;
                 }
 
-                // 3. Mola (Sonraki dalgaya geçiş süresi)
+                // 3. Mola
                 if (currentWave.TimeToNextWave > 0)
                 {
-                    Debug.Log($"⏳ Mola: {currentWave.TimeToNextWave} saniye...");
                     yield return new WaitForSeconds(currentWave.TimeToNextWave);
                 }
 
@@ -95,18 +107,17 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
         private IEnumerator SpawnGroupRoutine(WaveGroup group)
         {
-            if (group.EnemyPool == null)
-            {
-                Debug.LogError($"Hata: {name} üzerindeki bir grup için Pool atanmamış!");
-                yield break;
-            }
+            if (group.EnemyPool == null) yield break;
+
+            // Grup içi bekleme süresini cache'leyelim (Eğer sabitse)
+            WaitForSeconds groupSpawnDelay = new WaitForSeconds(group.DelayBetweenSpawns);
 
             for (int i = 0; i < group.Count; i++)
             {
                 SpawnEnemy(group.EnemyPool);
                 
                 if (group.DelayBetweenSpawns > 0)
-                    yield return new WaitForSeconds(group.DelayBetweenSpawns);
+                    yield return groupSpawnDelay;
             }
         }
 
@@ -114,7 +125,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         {
             EnemyBehaviorController enemy = pool.Get();
 
-            // Pozisyon
             Vector3 randomOffset = new Vector3(
                 Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2),
                 0,
@@ -123,7 +133,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             enemy.transform.position = transform.position + randomOffset;
             enemy.transform.rotation = transform.rotation;
 
-            // Rota
             if (_forcePatrolRoute != null)
             {
                 enemy.SetPatrolRoute(_forcePatrolRoute);
@@ -132,9 +141,23 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             _activeEnemies.Add(enemy);
         }
 
-        private bool HasActiveEnemies()
+        // [OPTİMİZASYON 3] Bu fonksiyon sadece okuma yapar, yazma/silme yapmaz. O(N) ama çok hafif.
+        private bool IsAnyEnemyAlive()
         {
-            // Listeyi temizle (Ölüleri at)
+            for (int i = 0; i < _activeEnemies.Count; i++)
+            {
+                // Eğer referans null değilse VE obje aktifse, hala yaşayan var demektir.
+                if (_activeEnemies[i] != null && _activeEnemies[i].gameObject.activeSelf)
+                {
+                    return true; // Bir tane bulduk, döngüyü kır ve çık.
+                }
+            }
+            return false; // Hiçbiri aktif değil.
+        }
+
+        // Listeyi sadece dalga geçişlerinde toplu temizleriz.
+        private void CleanupDeadEnemiesImmediately()
+        {
             for (int i = _activeEnemies.Count - 1; i >= 0; i--)
             {
                 if (_activeEnemies[i] == null || !_activeEnemies[i].gameObject.activeSelf)
@@ -142,11 +165,8 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
                     _activeEnemies.RemoveAt(i);
                 }
             }
-
-            return _activeEnemies.Count > 0;
         }
 
-        // Görselleştirme
         private void OnDrawGizmos()
         {
             Gizmos.color = _waitingForCleave ? Color.yellow : (_isSpawning ? Color.green : Color.red);
