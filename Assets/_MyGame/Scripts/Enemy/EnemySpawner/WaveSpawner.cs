@@ -123,30 +123,46 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
        private void SpawnEnemy(EnemyPool pool)
         {
-            // Havuzdan al
+            // 1. Havuzdan düşmanı al (Bu sırada Pool onu otomatik açıyor, bu kötü)
             EnemyBehaviorController enemy = pool.Get();
 
-            // [ÇÖZÜM] Düşmana sahibini tanıt (Çok önemli satır!)
+            // [DÜZELTME] Düşmanı hemen geri kapat!
+            // Böylece fizik motoru veya NavMesh onun eski yerinde uyandığını fark etmeyecek.
+            enemy.gameObject.SetActive(false); 
+
+            // 2. Kimlik Kartını Ver
             enemy.InitializePool(pool); 
 
-            // Pozisyon
+            // 3. Pozisyonu Ayarla (Artık kapalı olduğu için güvenle ışınlayabiliriz)
             Vector3 randomOffset = new Vector3(
                 Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2),
                 0,
                 Random.Range(-_spawnAreaSize.z / 2, _spawnAreaSize.z / 2)
             );
+            
+            // Konumu ve Rotasyonu ata
             enemy.transform.position = transform.position + randomOffset;
             enemy.transform.rotation = transform.rotation;
 
-            // Rota
+            // [EKSTRA GÜVENLİK] Eğer NavMeshAgent varsa onu da resetle (Warp)
+            // (Rigidbody kullanıyorsan bu blok çalışmaz ama zararı da yok)
+            if (enemy.TryGetComponent(out UnityEngine.AI.NavMeshAgent agent))
+            {
+                agent.Warp(transform.position + randomOffset);
+            }
+
+            // 4. Rotayı Ver
             if (_forcePatrolRoute != null)
             {
                 enemy.SetPatrolRoute(_forcePatrolRoute);
             }
 
+            // 5. Listeye Ekle
             _activeEnemies.Add(enemy);
-        }
 
+            // [FİNAL] Şimdi temiz bir sayfa ile, doğru konumda tekrar aç!
+            enemy.gameObject.SetActive(true);
+        }
         // [OPTİMİZASYON 3] Bu fonksiyon sadece okuma yapar, yazma/silme yapmaz. O(N) ama çok hafif.
         private bool IsAnyEnemyAlive()
         {
