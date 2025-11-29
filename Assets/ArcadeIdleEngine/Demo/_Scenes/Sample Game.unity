@@ -338,6 +338,7 @@ GameObject:
   - component: {fileID: 184907965}
   - component: {fileID: 184907962}
   - component: {fileID: 184907963}
+  - component: {fileID: 184907969}
   - component: {fileID: 184907966}
   - component: {fileID: 184907967}
   - component: {fileID: 184907968}
@@ -493,7 +494,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 80
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &184907966
 MonoBehaviour:
@@ -508,7 +509,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyMoveTest
   _targetTag: Player
-  _rotationSpeed: 1
+  _rotationSpeed: 0
   _showDebugLogs: 1
 --- !u!114 &184907967
 MonoBehaviour:
@@ -533,16 +534,29 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 184907957}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 355d3ee7f9d5a49b480ad1024eaff1d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Enemy.WaypointEnemyMover
-  _route: {fileID: 0}
+  _route: {fileID: 622209196}
   _rotationSpeed: 0
-  _arrivalDistance: 0.5
+  _arrivalDistance: 1
   _loopPath: 1
-  _showDebugLogs: 0
+  _showDebugLogs: 1
+--- !u!114 &184907969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 184907957}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cdce3a334b7b74bf8a2eb3a7137ea065, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyBehaviorController
+  _startingBehavior: 3
 --- !u!1 &190183309
 GameObject:
   m_ObjectHideFlags: 0
