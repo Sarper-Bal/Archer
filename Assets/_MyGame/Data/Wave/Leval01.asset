@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b56c80291041d4678a8437bafe006a32, type: 3}
+  m_Name: Leval01
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Spawners.WaveConfig
+  Waves:
+  - WaveName: 01
+    Groups:
+    - EnemyPool: {fileID: 11400000, guid: 0711827b2321249059937d942f3e5e7c, type: 2}
+      Count: 5
+      DelayBetweenSpawns: 1
+    WaitForAllDead: 1
+    TimeToNextWave: 3
+  - WaveName: 02
+    Groups:
+    - EnemyPool: {fileID: 11400000, guid: 0711827b2321249059937d942f3e5e7c, type: 2}
+      Count: 3
+      DelayBetweenSpawns: 1
+    WaitForAllDead: 1
+    TimeToNextWave: 3
+  LoopWaves: 0
