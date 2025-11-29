@@ -38,14 +38,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 
         private void OnEnable()
         {
-            // Havuzdan çıktığında hemen bulmaya çalış
             ResolveRoute(); 
             ResetPath();
         }
 
-        // [DÜZELTME] Start ekledik.
-        // Eğer oyunun en başında OnEnable çalıştığında "RouteManager" henüz hazır değilse,
-        // Yol bulunamamış olabilir. Start fonksiyonu her şey yüklendikten sonra çalışır.
         private void Start()
         {
             if (_activeRoute == null)
@@ -57,17 +53,12 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 
         private void ResolveRoute()
         {
-            // Eğer zaten bulduysam tekrar arama (Optimizasyon)
             if (_activeRoute != null) return;
-
-            // 1. Manuel atama (Inspector)
             if (_manualRoute != null)
             {
                 _activeRoute = _manualRoute;
                 return;
             }
-
-            // 2. Data-Driven ID ile arama
             if (_stats.Definition != null && _stats.Definition.PatrolRouteID != null)
             {
                 if (RouteManager.Instance != null)
@@ -79,13 +70,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 
         private void FixedUpdate()
         {
-            // Hala yol yoksa yapacak bir şey yok, bekle
-            if (_activeRoute == null)
-            {
-                // [EKSTRA KORUMA] Belki yönetici geç yüklendi, arada bir tekrar sor?
-                // Performans için burayı her karede çağırmıyoruz, Start'ta halledilmiş olmalı.
-                return;
-            }
+            if (_activeRoute == null) return;
 
             if (_isPathComplete || _currentTargetPoint == null || _stats.Definition == null) 
             {
@@ -162,7 +147,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
         public void SetRoute(WaypointRoute newRoute)
         {
             _manualRoute = newRoute;
-            _activeRoute = null; // Sıfırla ki Resolve tekrar çalışsın
+            _activeRoute = null;
             ResolveRoute();
             ResetPath();
         }
@@ -182,22 +167,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
             }
         }
         
-        private void OnCollisionEnter(Collision collision)
-        {
-             if (collision.gameObject.CompareTag("Player") && _stats.Definition != null)
-             {
-                 if (collision.gameObject.TryGetComponent(out IDamageable damageable))
-                 {
-                     damageable.TakeDamage(_stats.Definition.ContactDamage);
-                     if (_stats.Definition.DeathEffectPool != null)
-                     {
-                         var effect = _stats.Definition.DeathEffectPool.Get();
-                         effect.transform.position = transform.position;
-                         effect.Initialize(_stats.Definition.DeathEffectPool);
-                     }
-                     gameObject.SetActive(false);
-                 }
-             }
-        }
+        // [SİLİNDİ] OnCollisionEnter ve ExplodeAndDie kaldırıldı.
     }
 }

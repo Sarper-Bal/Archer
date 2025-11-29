@@ -1,7 +1,7 @@
 using UnityEngine;
-using ArcadeBridge.ArcadeIdleEngine.Pools;
+using IndianOceanAssets.Engine2_5D;
 
-namespace IndianOceanAssets.Engine2_5D
+namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 {
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(EnemyStats))] 
@@ -18,10 +18,9 @@ namespace IndianOceanAssets.Engine2_5D
         private Rigidbody _rb;
         private EnemyStats _stats;
         
-        // --- OPTİMİZASYON: Arama Zamanlayıcısı ---
-        // Düşman hedefi bulamazsa her karede değil, bu sürede bir bakar.
+        // Arama Zamanlayıcısı
         private float _nextSearchTime;
-        private const float SEARCH_INTERVAL = 0.5f; // Saniyede 2 kez arama (Çok ideal)
+        private const float SEARCH_INTERVAL = 0.5f; 
 
         private void Awake()
         {
@@ -32,40 +31,44 @@ namespace IndianOceanAssets.Engine2_5D
             _rb.useGravity = true;
             _rb.isKinematic = false;
             _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-            _rb.mass = 50f; 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
         }
 
         private void OnEnable()
         {
-            // Düşman havuza girip çıkarsa (Respawn) hemen bir kez ara
             _target = null;
-            _nextSearchTime = Time.time; // İlk aramayı hemen yap
+            // Yük dengeleme için rastgele başlangıç süresi
+            _nextSearchTime = Time.time + Random.Range(0f, SEARCH_INTERVAL);
+            
+            // Hızı sıfırla
+            #if UNITY_6000_0_OR_NEWER
+            _rb.linearVelocity = Vector3.zero; 
+            #else
+            _rb.velocity = Vector3.zero;
+            #endif
         }
 
         private void Update()
         {
-            // --- KRİTİK OPTİMİZASYON BURADA ---
-            // Eğer hedefim yoksa...
-            if (_target == null)
+            // Hedefim yoksa veya hedef öldüyse/kapandıysa
+            if (_target == null || !_target.gameObject.activeInHierarchy)
             {
-                // ...ve arama zamanım geldiyse ara.
+                // [DÜZELTME] Referans ölü ise önce onu temizle
+                if (_target != null) _target = null;
+
+                // Arama zamanı geldiyse ara
                 if (Time.time >= _nextSearchTime)
                 {
                     FindTarget();
-                    _nextSearchTime = Time.time + SEARCH_INTERVAL; // Bir sonraki arama 0.5sn sonra
+                    _nextSearchTime = Time.time + SEARCH_INTERVAL; 
                 }
             }
-            // Hedefim var ama ölmüşse/kapanmışsa onu bırak
-            else if (!_target.gameObject.activeInHierarchy)
-            {
-                _target = null;
-            }
+            // [DÜZELTME] Hatalı olan "_target = null" satırı buradan kaldırıldı.
         }
 
         private void FixedUpdate()
         {
-            // Hedef yoksa fizik motorunu boşuna çalıştırma
+            // Hedef yoksa hareket etme
             if (_target == null || _stats.Definition == null) return;
 
             MoveLogic();
@@ -73,7 +76,6 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void FindTarget()
         {
-            // Bu işlem "Pahalıdır" (CPU yorar), o yüzden Update içinde kısıtlı çağırıyoruz.
             GameObject targetObj = GameObject.FindGameObjectWithTag(_targetTag);
             if (targetObj != null) 
             {
@@ -89,59 +91,23 @@ namespace IndianOceanAssets.Engine2_5D
 
             if (direction != Vector3.zero)
             {
+                // Dönüş
                 Quaternion lookRotation = Quaternion.LookRotation(direction);
                 _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, lookRotation, _rotationSpeed * Time.fixedDeltaTime));
 
+                // Hareket
                 Vector3 velocity = direction * _stats.Definition.MoveSpeed;
                 
-#if UNITY_6000_0_OR_NEWER
-                velocity.y = _rb.linearVelocity.y;
+                #if UNITY_6000_0_OR_NEWER
+                velocity.y = _rb.linearVelocity.y; // Yerçekimini koru
                 _rb.linearVelocity = velocity;
-#else
+                #else
                 velocity.y = _rb.velocity.y;
                 _rb.velocity = velocity;
-#endif
+                #endif
             }
         }
-
-        private void OnCollisionEnter(Collision collision)
-        {
-            if (collision.gameObject.CompareTag(_targetTag))
-            {
-                ExplodeAndDie(collision.gameObject);
-            }
-        }
-
-        private void ExplodeAndDie(GameObject targetObj)
-        {
-            if (_stats.Definition == null) return;
-
-            float damageAmount = _stats.Definition.ContactDamage;
-            
-            if (targetObj.TryGetComponent(out IDamageable damageable))
-            {
-                damageable.TakeDamage(damageAmount);
-            }
-            else
-            {
-                var parentDamageable = targetObj.GetComponentInParent<IDamageable>();
-                if (parentDamageable != null)
-                {
-                    parentDamageable.TakeDamage(damageAmount);
-                }
-            }
-
-            if (_showDebugLogs) Debug.Log($"💥 {name} patladı!");
-
-            if (_stats.Definition.DeathEffectPool != null)
-            {
-                var effect = _stats.Definition.DeathEffectPool.Get();
-                effect.transform.position = transform.position;
-                effect.transform.rotation = Quaternion.identity;
-                effect.Initialize(_stats.Definition.DeathEffectPool);
-            }
-
-            gameObject.SetActive(false);
-        }
+        
+        // Not: Hasar verme (Collision) kodları artık 'EnemyContactDamager' içinde olduğu için burada yok.
     }
 }
