@@ -1,17 +1,15 @@
 using UnityEngine;
-using ArcadeBridge.ArcadeIdleEngine.Experimental; // Stalker için
-using ArcadeBridge.ArcadeIdleEngine.Enemy; // Waypoint için
+using ArcadeBridge.ArcadeIdleEngine.Experimental; 
+using ArcadeBridge.ArcadeIdleEngine.Enemy; 
+using ArcadeBridge.ArcadeIdleEngine.Spawners; 
 
 namespace IndianOceanAssets.Engine2_5D
 {
     [RequireComponent(typeof(EnemyStats))]
     public class EnemyBehaviorController : MonoBehaviour
     {
-        // [DEĞİŞİKLİK] Artık burada "Starting Behavior" ayarı yok.
-        // Veri tamamen EnemyStats -> EnemyDefinition'dan geliyor.
-
-        [Header("Debug Bilgisi (Sadece Okunabilir)")]
-        [SerializeField] private EnemyBehaviorType _currentBehavior; // Test ederken görmen için
+        [Header("Debug Bilgisi")]
+        [SerializeField] private EnemyBehaviorType _currentBehavior;
 
         // Script Referansları
         private EnemyStats _stats;
@@ -19,58 +17,61 @@ namespace IndianOceanAssets.Engine2_5D
         private StalkerEnemyMover _stalkerMover;
         private WaypointEnemyMover _waypointMover;
 
+        // Düşmanın hangi havuzdan geldiğini hatırlaması gerek
+        private EnemyPool _originPool; 
+
         private void Awake()
         {
             _stats = GetComponent<EnemyStats>();
-            
             _simpleMover = GetComponent<SimpleEnemyMover>();
             _stalkerMover = GetComponent<StalkerEnemyMover>();
             _waypointMover = GetComponent<WaypointEnemyMover>();
+        }
 
-            // Güvenlik kontrolü
-            if (_simpleMover == null) Debug.LogWarning($"{name}: SimpleMover eksik!");
+        public void InitializePool(EnemyPool pool)
+        {
+            _originPool = pool;
         }
 
         private void OnEnable()
         {
-            // Düşman doğduğunda (veya havuzdan çıktığında)
-            // Veri dosyasındaki "DefaultBehavior" ne ise onu uygula.
             if (_stats != null && _stats.Definition != null)
             {
                 SetBehavior(_stats.Definition.DefaultBehavior);
             }
             else
             {
-                // Veri yoksa güvenli modda aç (Hata vermesin)
                 SetBehavior(EnemyBehaviorType.SimpleChaser);
-                Debug.LogWarning($"{name}: EnemyDefinition bulunamadı, varsayılan SimpleChaser açıldı.");
+            }
+        }
+
+        private void OnDisable()
+        {
+            DisableAllBehaviors();
+
+            // Eğer bir havuzum varsa, beni o havuza geri iade et!
+            if (_originPool != null)
+            {
+                // [DÜZELTME] "Return" yerine "Release" yazdık.
+                _originPool.Release(this); 
             }
         }
 
         public void SetBehavior(EnemyBehaviorType newBehavior)
         {
-            _currentBehavior = newBehavior; // Debug için güncelle
-
-            // 1. Temiz Sayfa: Hepsini kapat
+            _currentBehavior = newBehavior; 
             DisableAllBehaviors();
 
-            // 2. İstenileni Aç
             switch (newBehavior)
             {
                 case EnemyBehaviorType.SimpleChaser:
                     if (_simpleMover) _simpleMover.enabled = true;
                     break;
-
                 case EnemyBehaviorType.Stalker:
                     if (_stalkerMover) _stalkerMover.enabled = true;
                     break;
-
                 case EnemyBehaviorType.Patrol:
                     if (_waypointMover) _waypointMover.enabled = true;
-                    break;
-                
-                case EnemyBehaviorType.None:
-                    // Hepsi kapalı kalır
                     break;
             }
         }
@@ -81,7 +82,6 @@ namespace IndianOceanAssets.Engine2_5D
             if (_stalkerMover) _stalkerMover.enabled = false;
             if (_waypointMover) _waypointMover.enabled = false;
 
-            // Hızı sıfırla (Kaymayı önle)
             var rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
@@ -93,7 +93,6 @@ namespace IndianOceanAssets.Engine2_5D
             }
         }
         
-        // Spawner'dan devriye yolu atandığında otomatik geçiş için yardımcı metod
         public void SetPatrolRoute(WaypointRoute route)
         {
             if (_waypointMover != null)

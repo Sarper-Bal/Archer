@@ -121,10 +121,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             }
         }
 
-        private void SpawnEnemy(EnemyPool pool)
+       private void SpawnEnemy(EnemyPool pool)
         {
+            // Havuzdan al
             EnemyBehaviorController enemy = pool.Get();
 
+            // [ÇÖZÜM] Düşmana sahibini tanıt (Çok önemli satır!)
+            enemy.InitializePool(pool); 
+
+            // Pozisyon
             Vector3 randomOffset = new Vector3(
                 Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2),
                 0,
@@ -133,6 +138,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             enemy.transform.position = transform.position + randomOffset;
             enemy.transform.rotation = transform.rotation;
 
+            // Rota
             if (_forcePatrolRoute != null)
             {
                 enemy.SetPatrolRoute(_forcePatrolRoute);

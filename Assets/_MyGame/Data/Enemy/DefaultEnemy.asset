@@ -15,6 +15,6 @@ MonoBehaviour:
   MoveSpeed: 5
   MaxHealth: 10
   ContactDamage: 19
-  _defaultBehavior: 2
+  _defaultBehavior: 3
   PatrolRouteID: {fileID: 11400000, guid: 2feae313691fd4cd5b2e3e832ea56c04, type: 2}
   DeathEffectPool: {fileID: 11400000, guid: 9e3040a574c4744b0946e7ccfeb1b75b, type: 2}
