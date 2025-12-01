@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b7d6576be00a4cb2ab0f4572fbf327c, type: 3}
-  m_Name: DefaultEnemy
+  m_Name: DefaultEnemy 1
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyDefinition
-  MoveSpeed: 3
+  MoveSpeed: 4
   MaxHealth: 10
   ContactDamage: 5
-  ThreatScore: 20
+  ThreatScore: 26.7
   _defaultBehavior: 3
   PatrolRouteID: {fileID: 11400000, guid: 2feae313691fd4cd5b2e3e832ea56c04, type: 2}
   EnemyPrefab: {fileID: 8282702779294200114, guid: 8efef095f9d5b446b9225776f7fad5e4,

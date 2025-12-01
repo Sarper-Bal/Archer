@@ -4,7 +4,6 @@ using ArcadeBridge.ArcadeIdleEngine.Enemy;
 
 namespace IndianOceanAssets.Engine2_5D
 {
-    // [NOT] Bu enum dosyanın en üstünde veya ayrı bir dosyada durabilir.
     public enum EnemyBehaviorType
     {
         None,
@@ -16,37 +15,33 @@ namespace IndianOceanAssets.Engine2_5D
     [CreateAssetMenu(fileName = "NewEnemyDefinition", menuName = "MyGame/Enemy Definition")]
     public class EnemyDefinition : ScriptableObject
     {
-        [Header("📊 Temel İstatistikler")]
-        [Tooltip("Değeri değiştirdiğinde puan otomatik güncellenir.")]
+        [Header("📊 İstatistikler (Değiştirince Puan Hesaplanır)")]
+        [Tooltip("Düşmanın hareket hızı.")]
         public float MoveSpeed = 5f;
+        
+        [Tooltip("Düşmanın maksimum canı.")]
         public float MaxHealth = 100f;
+        
+        [Tooltip("Dokunduğunda verdiği hasar.")]
         public float ContactDamage = 10f;
 
-        [Header("💀 Tehdit Analizi")]
-        public bool ManualOverride = false; // Elle girmek istersen bunu işaretle
-        public float ManualThreatValue = 0f;
-
-        // Bunu Inspector'da gri yapmak için CustomEditor gerekir ama şimdilik sadece gösteriyoruz.
-        // Elle değiştirsen bile oyun tekrar hesaplayıp üzerine yazar.
-        [Tooltip("Bu değer otomatiktir. Elle değiştirsen bile geri düzelir.")]
-        public float CalculatedThreat = 0f;
-
-        // Dışarıdan okumak için Property
-        public float ThreatScore => ManualOverride ? ManualThreatValue : CalculatedThreat;
+        [Header("💀 Tehdit Puanı (Otomatik)")]
+        [Tooltip("Otomatik hesaplanan zorluk derecesi.")]
+        public float ThreatScore = 0f; // Hesaplanan değer burada tutulur
 
         [Header("🧠 Yapay Zeka")]
         [SerializeField] private EnemyBehaviorType _defaultBehavior = EnemyBehaviorType.SimpleChaser;
         public RouteID PatrolRouteID; 
 
         [Header("✨ Görsel & Efekt")]
+        [Tooltip("Düşmanın fiziksel Prefab'ı (WaveSpawner bunu kullanacak)")]
+        public GameObject EnemyPrefab; // [YENİ] Prefab referansını buraya ekledik
         public DeathEffectPool DeathEffectPool; 
 
         public EnemyBehaviorType DefaultBehavior => _defaultBehavior;
 
-        // --- OTOMATİK HESAPLAMA MANTIĞI ---
-        
-        // Bu fonksiyon Unity'nin kendi özelliğidir.
-        // Inspector'da bir şeye dokunduğun an çalışır. Eklentiye gerek yoktur.
+        // --- OTOMATİK HESAPLAMA ---
+        // Inspector'da bir değer değiştiği an çalışır.
         private void OnValidate()
         {
             CalculateThreat();
@@ -57,8 +52,8 @@ namespace IndianOceanAssets.Engine2_5D
             // Formül: (Can + (Hasar x 2)) * (Hız / 3)
             float rawScore = (MaxHealth + (ContactDamage * 2f)) * (MoveSpeed / 3f);
             
-            // Okunabilir olması için virgülden sonra 1 basamak yuvarla
-            CalculatedThreat = Mathf.Round(rawScore * 10f) / 10f;
+            // Okunabilir olması için yuvarla (Örn: 12.5)
+            ThreatScore = Mathf.Round(rawScore * 10f) / 10f;
         }
     }
 }

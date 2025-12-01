@@ -10,31 +10,31 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         [SerializeField] private DirectorConfig _config;
         [SerializeField] private EnemyDatabase _enemyDatabase;
 
-        [Header("Oyun Durumu (Debug için görüntülenebilir)")]
+        [Header("Oyun Durumu (İzleme)")]
         [SerializeField] private int _currentWaveNumber = 1;
         [SerializeField] private float _currentDifficultyMultiplier = 1.0f;
         
-        // Bu listeyi Spawner okuyacak
+        // Bu liste Spawner tarafından okunacak
         public List<EnemyDefinition> NextWaveEnemies { get; private set; } = new List<EnemyDefinition>();
 
-        // Test etmek için sağ tık menüsü
+        // --- SAĞ TIK MENÜSÜ İLE TEST ---
         [ContextMenu("Test: Generate Next Wave")]
         public void GenerateNextWave()
         {
             if (_config == null || _enemyDatabase == null)
             {
-                Debug.LogError("⚠️ SmartWaveManager: Config veya Database eksik!");
+                Debug.LogError("⚠️ SmartWaveManager: Config veya Database eksik! Lütfen Inspector'dan atayın.");
                 return;
             }
 
             NextWaveEnemies.Clear();
 
             // 1. Bütçeyi Hesapla
-            // Formül: BaşlangıçParası * (DalgaBüyümesi ^ DalgaSayısı) * ZorlukÇarpanı
+            // Formül: BaşlangıçParası * (DalgaBüyümesi ^ (DalgaSayısı - 1)) * ZorlukÇarpanı
             float waveFactor = Mathf.Pow(_config.WaveGrowthMultiplier, _currentWaveNumber - 1);
             float totalBudget = _config.BaseCredit * waveFactor * _currentDifficultyMultiplier;
 
-            Debug.Log($"🧮 [AI Director] Dalga: {_currentWaveNumber} | Bütçe: {totalBudget:F1} (Zorluk: {_currentDifficultyMultiplier})");
+            Debug.Log($"🧮 [AI Director] Dalga: {_currentWaveNumber} | Bütçe: {totalBudget:F1} (Zorluk Çarpanı: {_currentDifficultyMultiplier})");
 
             // 2. Alışveriş Yap (Bütçe bitene kadar düşman seç)
             float remainingBudget = totalBudget;
@@ -49,7 +49,6 @@ namespace IndianOceanAssets.Engine2_5D.Managers
                 {
                     NextWaveEnemies.Add(candidate);
                     remainingBudget -= candidate.ThreatScore;
-                    // Debug.Log($"   🛒 Satın alındı: {candidate.name} (-{candidate.ThreatScore})");
                 }
                 else
                 {
@@ -59,7 +58,7 @@ namespace IndianOceanAssets.Engine2_5D.Managers
                 safetyBreak++;
             }
 
-            Debug.Log($"✅ Alışveriş Tamamlandı! Toplam {NextWaveEnemies.Count} düşman sahneye sürülecek.");
+            Debug.Log($"✅ Alışveriş Tamamlandı! Toplam {NextWaveEnemies.Count} düşman seçildi. Kalan Para: {remainingBudget:F1}");
         }
 
         // --- OYUN DÖNGÜSÜ METOTLARI ---
@@ -68,12 +67,12 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         {
             _currentWaveNumber++;
             _currentDifficultyMultiplier += _config.DifficultyIncreaseOnWin;
-            Debug.Log("🎉 Dalga Kazanıldı! Zorluk arttırıldı.");
+            Debug.Log("🎉 Dalga Kazanıldı! Bir sonraki dalga daha zor olacak.");
         }
 
         public void OnWaveLost() // Player öldüğünde çağırılacak
         {
-            // Dalga sayısı artmaz, aynı dalgayı tekrar deneriz
+            // Dalga sayısı artmaz, aynı dalgayı tekrar deneriz ama daha kolay
             _currentDifficultyMultiplier -= _config.DifficultyDecreaseOnLoss;
             
             // Alt limit kontrolü

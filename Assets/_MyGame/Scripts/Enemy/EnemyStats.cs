@@ -24,5 +24,16 @@ namespace IndianOceanAssets.Engine2_5D
                 _health.InitializeHealth(_enemyDefinition.MaxHealth, _enemyDefinition.DeathEffectPool);
             }
         }
+        public void InitializeRuntime(EnemyDefinition newData)
+    {
+        _enemyDefinition = newData; // Veriyi değiştir
+        
+        if (_health != null)
+        {
+            // Canı yeni veriye göre fulle
+            _health.InitializeHealth(newData.MaxHealth, newData.DeathEffectPool);
+        }
+    }
+        
     }
 }

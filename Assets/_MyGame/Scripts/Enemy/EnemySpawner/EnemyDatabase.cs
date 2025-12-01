@@ -1,6 +1,10 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq; // Sıralama işlemleri için
+using System.Linq;
+
+#if UNITY_EDITOR
+using UnityEditor; // Sadece editörde çalışması için gerekli
+#endif
 
 namespace IndianOceanAssets.Engine2_5D.Data
 {
@@ -8,45 +12,60 @@ namespace IndianOceanAssets.Engine2_5D.Data
     public class EnemyDatabase : ScriptableObject
     {
         [Header("📁 Düşman Kataloğu")]
-        [Tooltip("Düşman Definition dosyalarını buraya sürükle.")]
+        [Tooltip("Bu liste otomatik doldurulabilir veya elle düzenlenebilir.")]
         public List<EnemyDefinition> AllEnemies = new List<EnemyDefinition>();
 
-        // [BUTON YERİNE SAĞ TIK MENÜSÜ]
-        // Bu scriptin Inspector başlığına sağ tıklayarak bu fonksiyonları çalıştırabilirsin.
-        
-        [ContextMenu("Sort Enemies (Easy -> Hard)")]
-        private void SortByThreatAscending()
+        // --- SAĞ TIK MENÜSÜ İLE ÇALIŞAN FONKSİYONLAR ---
+
+        [ContextMenu("🔍 Tüm Düşmanları Bul (Auto-Find)")]
+        private void FindAllEnemiesInProject()
         {
-            // Puanı düşükten yükseğe sırala
-            AllEnemies = AllEnemies.OrderBy(x => x != null ? x.ThreatScore : 0).ToList();
-            
 #if UNITY_EDITOR
-            // Değişikliği kaydet (Unity editörüne "bu dosya değişti" de)
-            UnityEditor.EditorUtility.SetDirty(this); 
+            AllEnemies.Clear();
+            
+            // Projedeki tüm EnemyDefinition tipindeki dosyaların ID'lerini bul
+            string[] guids = AssetDatabase.FindAssets("t:EnemyDefinition");
+            
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                EnemyDefinition enemy = AssetDatabase.LoadAssetAtPath<EnemyDefinition>(path);
+                
+                if (enemy != null && !AllEnemies.Contains(enemy))
+                {
+                    AllEnemies.Add(enemy);
+                }
+            }
+            
+            // Bulduktan sonra otomatik sırala
+            SortByThreatAscending();
+            
+            Debug.Log($"✅ Otomatik Tarama Tamamlandı: {AllEnemies.Count} düşman bulundu ve eklendi.");
+            EditorUtility.SetDirty(this); // Kaydet
 #endif
-            Debug.Log("✅ Düşmanlar KOLAYDAN ZORA sıralandı.");
         }
 
-        [ContextMenu("Sort Enemies (Hard -> Easy)")]
-        private void SortByThreatDescending()
+        [ContextMenu("Puanına Göre Sırala (Kolay -> Zor)")]
+        private void SortByThreatAscending()
         {
-            // Puanı yüksekten düşüğe sırala
-            AllEnemies = AllEnemies.OrderByDescending(x => x != null ? x.ThreatScore : 0).ToList();
-            
+            // ThreatScore'a göre sırala
+            AllEnemies = AllEnemies.OrderBy(x => x != null ? x.ThreatScore : 0).ToList();
 #if UNITY_EDITOR
-            UnityEditor.EditorUtility.SetDirty(this);
+            EditorUtility.SetDirty(this);
 #endif
-            Debug.Log("🔥 Düşmanlar ZORDAN KOLAYA sıralandı.");
+            Debug.Log("📊 Düşmanlar KOLAYDAN ZORA sıralandı.");
         }
+
+        // --- OYUN İÇİ KULLANIM (AI Director Burayı Kullanacak) ---
         
         /// <summary>
-        /// Belirli bir bütçeye uygun en güçlü düşmanı bulur (AI Director için hazırlık)
+        /// Bütçeye uygun en güçlü düşmanı verir.
         /// </summary>
         public EnemyDefinition GetEnemyByCost(float maxCost)
         {
-            // Bütçemi aşmayanlar arasında, bütçeme en yakın olanı (en güçlüsünü) ver.
+            // Bütçeyi aşmayan en yüksek puanlı düşmanı seç
             return AllEnemies
-                .Where(x => x.ThreatScore <= maxCost)
+                .Where(x => x != null && x.ThreatScore <= maxCost)
                 .OrderByDescending(x => x.ThreatScore)
                 .FirstOrDefault();
         }

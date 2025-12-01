@@ -2,198 +2,225 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using IndianOceanAssets.Engine2_5D; 
-using IndianOceanAssets.Engine2_5D.Spawners; 
-// [KRİTİK] WaypointRoute ve EnemyBehaviorController için gerekli namespace:
-using ArcadeBridge.ArcadeIdleEngine.Enemy; 
+using IndianOceanAssets.Engine2_5D.Managers; // SmartWaveManager için
+using ArcadeBridge.ArcadeIdleEngine.Enemy;
 
 namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 {
     public class WaveSpawner : MonoBehaviour
     {
-        [Header("Pool Settings / Havuz Ayarları")]
-        [Tooltip("Prefab to use for pooling. / Havuza eklenecek düşman prefabı")]
-        [SerializeField] private EnemyBehaviorController _enemyPrefab; 
+        [Header("🧠 AI Bağlantısı")]
+        [SerializeField] private SmartWaveManager _director;
+
+        [Header("⏱️ Dalga Ayarları")]
+        [Tooltip("Bir dalganın spawn olma süresi (Saniye). Düşmanlar bu süreye yayılır.")]
+        [SerializeField] private float _waveDuration = 60f;
         
-        [Tooltip("Initial pool size. / Oyun başında kaç düşman üretip hazır bekletelim?")]
-        [SerializeField] private int _initialPoolSize = 30;
+        [Tooltip("İki dalga arasındaki dinlenme süresi.")]
+        [SerializeField] private float _timeBetweenWaves = 5f;
 
-        [Header("Data (Brain)")]
-        [SerializeField] private WaveConfig _waveConfig;
-
-        [Header("Spawn Settings")]
-        [SerializeField] private Vector3 _spawnAreaSize = new Vector3(5, 0, 5);
-        [SerializeField] private WaypointRoute _forcePatrolRoute;
-
-        // [YENİ SİSTEM] Local Pool (Queue is O(1) - Fastest)
-        // Artık dışarıdaki ScriptableObject'e bağımlı değiliz.
-        private Queue<EnemyBehaviorController> _localEnemyPool = new Queue<EnemyBehaviorController>();
+        [Header("📍 Alan Ayarları")]
+        [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
         
-        // Active enemies list / Aktif düşmanları takip listesi
+        // [YENİ SİSTEM] Multi-Pool: Her düşman tipi (Definition Adı) için ayrı bir kuyruk tutar.
+        // string: Düşman Türü (Örn: "Slime"), Queue: O türün yedekleri
+        private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
+        
+        // Aktif düşmanları takip listesi
         private List<EnemyBehaviorController> _activeEnemies = new List<EnemyBehaviorController>();
 
-        // [OPTIMIZATION] Cached WaitForSeconds to avoid GC / Çöp oluşumunu önlemek için önbellek
-        private WaitForSeconds _checkInterval; 
-        private int _currentWaveIndex = 0;
+        // Cache
+        private WaitForSeconds _checkInterval = new WaitForSeconds(1f); 
+        private bool _isWaveActive = false;
 
-        public System.Action<int, int> OnWaveChanged; 
-        public System.Action OnAllWavesComplete;
-
-        private void Awake()
-        {
-            _checkInterval = new WaitForSeconds(0.5f);
-            
-            // [PREWARM] Fill the pool before game starts / Havuzu oyundan önce doldur
-            InitializeLocalPool();
-        }
-
-        private void InitializeLocalPool()
-        {
-            if (_enemyPrefab == null)
-            {
-                Debug.LogError("⚠️ WaveSpawner: Enemy Prefab is missing! / Düşman prefabı atanmamış!");
-                return;
-            }
-
-            for (int i = 0; i < _initialPoolSize; i++)
-            {
-                CreateNewEnemyForPool();
-            }
-        }
-
-        // Creates a new enemy and adds it to the pool / Yeni düşman yaratır ve havuza ekler
-        private EnemyBehaviorController CreateNewEnemyForPool()
-        {
-            EnemyBehaviorController enemy = Instantiate(_enemyPrefab, transform);
-            enemy.gameObject.SetActive(false);
-            
-            // [BAĞLANTI] Düşman öldüğünde bu spawner'a haber versin
-            enemy.OnReturnToPool = ReturnEnemyToPool;
-            
-            _localEnemyPool.Enqueue(enemy);
-            return enemy;
-        }
+        public System.Action<int> OnWaveStarted; // UI için event
+        public System.Action OnWaveCleared;
 
         private void Start()
         {
-            if (_waveConfig != null)
+            // Oyuna başlamadan önce referans kontrolü
+            if (_director == null)
             {
-                StartCoroutine(ProcessWaves());
-            }
-        }
-
-        // Callback function when enemy dies / Düşman öldüğünde çağrılan fonksiyon
-        private void ReturnEnemyToPool(EnemyBehaviorController enemy)
-        {
-            if (this == null || gameObject == null) return;
-
-            // Remove from active list
-            if (_activeEnemies.Contains(enemy))
-            {
-                _activeEnemies.Remove(enemy);
+                Debug.LogError("⚠️ WaveSpawner: SmartWaveManager (Director) atanmamış! Lütfen Inspector'dan atayın.");
+                return;
             }
 
-            enemy.gameObject.SetActive(false);
-            
-            // Return to Queue / Kuyruğa geri koy
-            _localEnemyPool.Enqueue(enemy);
+            StartCoroutine(GameLoopRoutine());
         }
 
-        private IEnumerator ProcessWaves()
+        private IEnumerator GameLoopRoutine()
         {
-            _currentWaveIndex = 0;
-
+            // Sonsuz Oyun Döngüsü
             while (true)
             {
-                if (_currentWaveIndex >= _waveConfig.Waves.Count)
-                {
-                    if (_waveConfig.LoopWaves) _currentWaveIndex = 0; 
-                    else
-                    {
-                        OnAllWavesComplete?.Invoke();
-                        yield break; 
-                    }
-                }
-
-                WaveDefinition currentWave = _waveConfig.Waves[_currentWaveIndex];
-                OnWaveChanged?.Invoke(_currentWaveIndex + 1, _waveConfig.Waves.Count);
+                // 1. HAZIRLIK: AI'dan yeni dalgayı iste
+                _director.GenerateNextWave(); 
+                List<EnemyDefinition> enemiesToSpawn = _director.NextWaveEnemies;
                 
-                Debug.Log($"🌊 Wave Started: {currentWave.WaveName}");
-
-                // 1. Spawn Groups
-                foreach (var group in currentWave.Groups)
+                if (enemiesToSpawn.Count == 0)
                 {
-                    yield return StartCoroutine(SpawnGroupRoutine(group));
+                    Debug.LogWarning("⚠️ AI Director boş liste gönderdi. Bütçe yetersiz olabilir.");
+                    yield return new WaitForSeconds(2f);
+                    continue; // Tekrar dene
                 }
 
-                // 2. Wait for clear
-                if (currentWave.WaitForAllDead)
+                OnWaveStarted?.Invoke(enemiesToSpawn.Count);
+                _isWaveActive = true;
+
+                // 2. SAVAŞ: Düşmanları zamana yayarak spawn et
+                // Formül: Eğer 60 saniyemiz ve 60 düşmanımız varsa, her 1 saniyede bir düşman çıkar.
+                float spawnDelay = _waveDuration / (float)enemiesToSpawn.Count;
+                WaitForSeconds waitDelay = new WaitForSeconds(spawnDelay);
+
+                foreach (EnemyDefinition enemyData in enemiesToSpawn)
                 {
-                    while (_activeEnemies.Count > 0)
-                    {
-                        yield return _checkInterval; 
-                    }
+                    SpawnEnemy(enemyData);
+                    yield return waitDelay; // Sıradaki düşman için bekle
                 }
 
-                // 3. Cooldown
-                if (currentWave.TimeToNextWave > 0)
-                    yield return new WaitForSeconds(currentWave.TimeToNextWave);
+                // 3. BEKLEME: Hepsi ölene kadar bekle (Hepsini Öldür Modu)
+                Debug.Log("⏳ Spawn bitti, temizlik bekleniyor...");
+                
+                while (_activeEnemies.Count > 0)
+                {
+                    yield return _checkInterval; 
+                }
 
-                _currentWaveIndex++;
+                // 4. ZAFER: Dalga bitti, AI'ya haber ver (Zorluğu artırsın)
+                _isWaveActive = false;
+                _director.OnWaveWon(); 
+                OnWaveCleared?.Invoke();
+
+                Debug.Log($"🎉 Dalga Temizlendi! {_timeBetweenWaves} saniye mola...");
+                yield return new WaitForSeconds(_timeBetweenWaves);
             }
         }
 
-        private IEnumerator SpawnGroupRoutine(WaveGroup group)
-        {
-            WaitForSeconds delay = new WaitForSeconds(group.DelayBetweenSpawns);
+        // --- SPAWN SİSTEMİ (Multi-Pool Logic) ---
 
-            for (int i = 0; i < group.Count; i++)
+        private void SpawnEnemy(EnemyDefinition data)
+        {
+            // Hangi prefab? (Resources'dan yüklemek yerine direkt veriden alıyoruz)
+            // NOT: EnemyDefinition scriptine "Prefab" değişkeni eklememiz gerekebilir, 
+            // ya da verinin adı ile Resources.Load yapabiliriz. 
+            // Şimdilik verinin adını anahtar olarak kullanıyoruz.
+            
+            // Havuzdan çek veya yeni yarat
+            EnemyBehaviorController enemy = GetFromPool(data);
+
+            // Pozisyonla (Hala kapalı)
+            Vector3 randomPos = GetRandomPosition();
+            enemy.transform.position = randomPos;
+            enemy.transform.rotation = Quaternion.identity;
+
+            // [ÖNEMLİ] İstatistiklerini Yükle (Stat Scriptini bul ve datayı ver)
+            // Bu kısım çok kritik, yoksa bütün düşmanlar aynı güçte olur.
+            var stats = enemy.GetComponent<EnemyStats>();
+            if (stats != null)
             {
-                SpawnFromPool(); // Eski 'SpawnEnemy(pool)' yerine bunu kullanıyoruz
-                if (group.DelayBetweenSpawns > 0) yield return delay;
+                // Reflection veya stat scriptinde public bir "SetData" metodu olması lazım.
+                // Şimdilik EnemyStats scriptinde "EnemyDefinition" serialized field olduğu için
+                // onu runtime'da değiştirmek gerekebilir. 
+                // *Bunun için EnemyStats scriptine minik bir ekleme yapacağız.*
+                stats.InitializeRuntime(data);            }
+
+            // Eğer devriye rotası varsa ata
+            if (data.DefaultBehavior == EnemyBehaviorType.Patrol && data.PatrolRouteID != null)
+            {
+                // RouteManager entegrasyonu (varsa)
             }
+
+            // Aktifleştir
+            enemy.gameObject.SetActive(true);
+            _activeEnemies.Add(enemy);
         }
 
-        private void SpawnFromPool()
+        private EnemyBehaviorController GetFromPool(EnemyDefinition data)
         {
-            EnemyBehaviorController enemy;
+            // Prefab ismini anahtar olarak kullan (Örn: "Goblin_Data")
+            string key = data.name; 
 
-            // Check if pool has available enemies / Havuzda asker var mı?
-            if (_localEnemyPool.Count > 0)
+            // 1. Bu tür için bir rafımız var mı? Yoksa oluştur.
+            if (!_poolDictionary.ContainsKey(key))
             {
-                enemy = _localEnemyPool.Dequeue();
+                _poolDictionary[key] = new Queue<EnemyBehaviorController>();
+            }
+
+            // 2. Rafta hazır asker var mı?
+            if (_poolDictionary[key].Count > 0)
+            {
+                EnemyBehaviorController pooledEnemy = _poolDictionary[key].Dequeue();
+                
+                // [GÜVENLİK] Obje sahnede silinmişse (Destroy olduysa) yenisini yarat
+                if (pooledEnemy != null) 
+                {
+                    pooledEnemy.OnReturnToPool = ReturnEnemyToPool; // Bileti tazele
+                    return pooledEnemy;
+                }
+            }
+
+            // 3. Yoksa yeni üret (Instantiate)
+            // EnemyDefinition içinde Prefab referansı tutmadığımız için (henüz),
+            // şimdilik "Default" bir düşman prefabı kullanmak zorundayız veya 
+            // EnemyDefinition'a "EnemyBehaviorController Prefab" eklemeliyiz.
+            // *ÇÖZÜM:* Geçici olarak Resources.Load kullanıyoruz, ama doğrusu Definiton'a eklemektir.
+            
+            // VARSAYIM: Düşman prefabının adı, Data dosyasının adıyla aynı (Örn: "Slime")
+            GameObject prefab = Resources.Load<GameObject>("Enemies/" + data.name);
+            
+            if (prefab == null)
+            {
+                Debug.LogError($"❌ PREFAB BULUNAMADI: 'Resources/Enemies/{data.name}' yolunda prefab yok! Lütfen kontrol et.");
+                return null;
+            }
+
+            GameObject newObj = Instantiate(prefab, transform);
+            var controller = newObj.GetComponent<EnemyBehaviorController>();
+            
+            // Eve dönüş bileti ver
+            controller.OnReturnToPool = ReturnEnemyToPool;
+            newObj.SetActive(false); // Kapalı başlat
+            
+            return controller;
+        }
+
+        private void ReturnEnemyToPool(EnemyBehaviorController enemy)
+        {
+            if (this == null) return;
+
+            // Listeden sil
+            if (_activeEnemies.Contains(enemy)) _activeEnemies.Remove(enemy);
+
+            enemy.gameObject.SetActive(false);
+
+            // Hangi rafa koyacağız?
+            // Düşmanın üzerindeki Stat scriptinden kimliğini (Definition) al
+            var stats = enemy.GetComponent<EnemyStats>();
+            if (stats != null && stats.Definition != null)
+            {
+                string key = stats.Definition.name;
+                
+                if (!_poolDictionary.ContainsKey(key))
+                    _poolDictionary[key] = new Queue<EnemyBehaviorController>();
+
+                _poolDictionary[key].Enqueue(enemy);
             }
             else
             {
-                // Pool is empty, create new one (Auto-Expand) / Havuz boşsa yeni yarat
-                enemy = CreateNewEnemyForPool();
-                _localEnemyPool.Dequeue(); // Kuyruktan hemen al
+                Destroy(enemy.gameObject); // Kimliği yoksa yok et (Çöp olmasın)
             }
+        }
 
-            // Positioning / Konumlandırma
-            Vector3 randomOffset = new Vector3(
-                Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2),
-                0,
-                Random.Range(-_spawnAreaSize.z / 2, _spawnAreaSize.z / 2)
-            );
-            
-            enemy.transform.position = transform.position + randomOffset;
-            enemy.transform.rotation = transform.rotation;
-
-            // Safe Activation / Güvenli Aktivasyon
-            enemy.gameObject.SetActive(true);
-            
-            // Assign Patrol Route / Devriye Rotası Ata
-            if (_forcePatrolRoute != null)
-            {
-                enemy.SetPatrolRoute(_forcePatrolRoute);
-            }
-
-            _activeEnemies.Add(enemy);
+        private Vector3 GetRandomPosition()
+        {
+            float x = Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2);
+            float z = Random.Range(-_spawnAreaSize.z / 2, _spawnAreaSize.z / 2);
+            return transform.position + new Vector3(x, 0, z);
         }
 
         private void OnDrawGizmos()
         {
-            Gizmos.color = Color.cyan;
+            Gizmos.color = _isWaveActive ? Color.red : Color.green;
             Gizmos.DrawWireCube(transform.position, _spawnAreaSize);
         }
     }
