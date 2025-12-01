@@ -2593,12 +2593,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 98bc69acb86ce47d2a7da6dc570967dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Spawners.WaveSpawner
-  _enemyPrefab: {fileID: 5729829292197405962, guid: 8efef095f9d5b446b9225776f7fad5e4,
-    type: 3}
-  _initialPoolSize: 1
   _waveConfig: {fileID: 11400000, guid: 5fd75e2bdbcb641788eb5c72ca626e2f, type: 2}
   _spawnAreaSize: {x: 3, y: 0, z: 3}
   _forcePatrolRoute: {fileID: 0}
+  _currentWaveIndex: 0
+  _isSpawning: 1
+  _waitingForCleave: 1
 --- !u!1 &872524373 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4306347848762786826, guid: 9e96dc8ccf06b43b280a494d6771e6b2,
