@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cafe4e911f955463485d25912490f898, type: 3}
   m_Name: AI_Director_Config
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Data.DirectorConfig
-  BaseCredit: 60
+  BaseCredit: 1000
   WaveGrowthMultiplier: 1.2
   DifficultyIncreaseOnWin: 0.1
   DifficultyDecreaseOnLoss: 0.1
