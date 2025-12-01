@@ -6912,6 +6912,54 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3.5727882, y: 0.32999998, z: 2.895678}
   m_Center: {x: 0.006394148, y: 0.16499999, z: -0.03216082}
+--- !u!1 &2147244071
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2147244073}
+  - component: {fileID: 2147244072}
+  m_Layer: 0
+  m_Name: SmartWaveManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2147244072
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2147244071}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f92051db7ea04ff59a7cd7b900c81cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Managers.SmartWaveManager
+  _config: {fileID: 11400000, guid: 39e231b078beb4a88904ba97a4e4847b, type: 2}
+  _enemyDatabase: {fileID: 11400000, guid: 6534a629395a14994bba8607110a58e4, type: 2}
+  _currentWaveNumber: 1
+  _currentDifficultyMultiplier: 1
+--- !u!4 &2147244073
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2147244071}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &167863750181744629
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7896,6 +7944,7 @@ SceneRoots:
   - {fileID: 302032954}
   - {fileID: 622209197}
   - {fileID: 857429711}
+  - {fileID: 2147244073}
   - {fileID: 1673663066}
   - {fileID: 3638816543370889235}
   - {fileID: 1320003948}
