@@ -1,8 +1,7 @@
 using UnityEngine;
 using ArcadeBridge.ArcadeIdleEngine.Experimental; 
-using ArcadeBridge.ArcadeIdleEngine.Enemy; // [ÖNEMLİ] Simple ve Waypoint Moverlar burada
+using ArcadeBridge.ArcadeIdleEngine.Enemy; 
 using ArcadeBridge.ArcadeIdleEngine.Spawners; 
-using DG.Tweening; // Animasyonlar için
 
 namespace IndianOceanAssets.Engine2_5D
 {
@@ -14,11 +13,11 @@ namespace IndianOceanAssets.Engine2_5D
 
         // Script Referansları
         private EnemyStats _stats;
-        private SimpleEnemyMover _simpleMover;   // Hata veren satır burasıydı
+        private SimpleEnemyMover _simpleMover;
         private StalkerEnemyMover _stalkerMover;
-        private WaypointEnemyMover _waypointMover; // Hata veren diğer satır
+        private WaypointEnemyMover _waypointMover;
 
-        // Düşmanın dönüş bileti (Spawner'a geri dönmesi için)
+        // Eve Dönüş Bileti
         public System.Action<EnemyBehaviorController> OnReturnToPool;
 
         private void Awake()
@@ -31,9 +30,7 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void OnEnable()
         {
-            // [JUICE] Doğma Animasyonu
-            transform.localScale = Vector3.zero;
-            transform.DOScale(Vector3.one, 0.4f).SetEase(Ease.OutBack);
+            // [NOT] Animasyon kodları buradan kaldırıldı. Artık 'EnemyVisuals' hallediyor.
 
             if (_stats != null && _stats.Definition != null)
             {
@@ -48,9 +45,8 @@ namespace IndianOceanAssets.Engine2_5D
         private void OnDisable()
         {
             DisableAllBehaviors();
-            transform.DOKill(); // Animasyonları temizle
-
-            // [POOL] Spawner'a beni geri alması için haber ver
+            
+            // Spawner'a beni geri alması için haber ver
             OnReturnToPool?.Invoke(this);
         }
 

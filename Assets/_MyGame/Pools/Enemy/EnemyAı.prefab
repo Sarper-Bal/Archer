@@ -20,6 +20,7 @@ GameObject:
   - component: {fileID: 7288936177112714446}
   - component: {fileID: 789308386387794532}
   - component: {fileID: 9014384587773107732}
+  - component: {fileID: 2127339152605955290}
   m_Layer: 6
   m_Name: "EnemyA\u0131"
   m_TagString: Enemy
@@ -201,7 +202,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyMoveTest
   _targetTag: Player
   _rotationSpeed: 0
-  _showDebugLogs: 0
 --- !u!114 &7288936177112714446
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -248,3 +248,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Enemy.EnemyContactDamager
   _targetTag: Player
   _destroyOnHit: 1
+--- !u!114 &2127339152605955290
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8282702779294200114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 265e7a7c070e7447d858a1c914fd9e54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Visuals.EnemyVisuals
+  _modelTransform: {fileID: 0}
+  _spawnStyle: 2
+  _spawnDuration: 0.6
+  _spawnEase: 24
+  _hitStyle: 4
+  _punchScale: {x: 0.4, y: -0.4, z: 0.4}
+  _hitDuration: 0.3
+  _vibrato: 8
+  _elasticity: 1
