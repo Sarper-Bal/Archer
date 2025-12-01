@@ -2592,9 +2592,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Spawners.WaveSpawner
   _director: {fileID: 2147244072}
-  _waveDuration: 60
   _timeBetweenWaves: 5
-  _spawnAreaSize: {x: 3, y: 0, z: 3}
+  _spawnAreaSize: {x: 1, y: 0, z: 1}
 --- !u!1 &872524373 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4306347848762786826, guid: 9e96dc8ccf06b43b280a494d6771e6b2,
@@ -6942,7 +6941,7 @@ MonoBehaviour:
   _config: {fileID: 11400000, guid: 39e231b078beb4a88904ba97a4e4847b, type: 2}
   _enemyDatabase: {fileID: 11400000, guid: 6534a629395a14994bba8607110a58e4, type: 2}
   _currentWaveNumber: 1
-  _currentDifficultyMultiplier: 1
+  _currentTotalBudget: 0
 --- !u!4 &2147244073
 Transform:
   m_ObjectHideFlags: 0
