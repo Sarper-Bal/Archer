@@ -10,10 +10,20 @@ namespace IndianOceanAssets.Engine2_5D.Data
         [Tooltip("Bu kural hangi dalgada başlasın?")]
         public int MinWave; 
 
-        [Header("Dağılım Oranları (Toplam 100 olmalı)")]
+        [Header("📊 Dağılım Oranları (Toplam 100 olmalı)")]
         [Range(0, 100)] public float SwarmPercent;
         [Range(0, 100)] public float RusherPercent;
         [Range(0, 100)] public float TankPercent;
+
+        [Header("⏱️ Spawn Aralıkları (Saniye)")]
+        [Tooltip("Sürü (Swarm) spawn olduktan sonra kaç saniye beklensin?")]
+        public float SwarmInterval;
+        
+        [Tooltip("Baskıncı (Rusher) spawn olduktan sonra kaç saniye beklensin?")]
+        public float RusherInterval;
+        
+        [Tooltip("Tank spawn olduktan sonra kaç saniye beklensin?")]
+        public float TankInterval;
     }
 
     [CreateAssetMenu(fileName = "AI_Director_Config", menuName = "MyGame/AI Director Config")]
@@ -26,19 +36,12 @@ namespace IndianOceanAssets.Engine2_5D.Data
         [Range(0f, 1f)] public float WinGrowthPercentage = 0.20f;
         [Range(0f, 1f)] public float LossPenaltyPercentage = 0.10f;
 
-        [Header("⏱️ Spawn Hızı")]
-        [Tooltip("Düşmanlar arası bekleme süresi (Saniye). Düşük = Hızlı Spawn")]
-        public float TimeBetweenSpawns = 0.5f;
-
         [Header("📜 Dalga Kuralları (Sıralı Liste)")]
-        [Tooltip("Dalgaya özel düşman dağılımlarını buradan ayarla.")]
         public List<WaveRule> WaveRules = new List<WaveRule>();
 
-        // --- YARDIMCI METOT: O anki kuralı bul ---
+        // --- YARDIMCI METOT ---
         public WaveRule GetRuleForWave(int currentWave)
         {
-            // Mevcut dalgadan küçük veya eşit olan en son kuralı (en yüksek MinWave'liyi) bul
-            // Örn: Rules=[1, 5, 10]. Current=7 ise -> 5. kuralı döndürür.
             return WaveRules
                 .Where(r => r.MinWave <= currentWave)
                 .OrderByDescending(r => r.MinWave)

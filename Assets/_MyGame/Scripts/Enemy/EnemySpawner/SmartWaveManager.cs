@@ -15,11 +15,30 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         [SerializeField] private float _currentTotalBudget;
 
         public List<EnemyDefinition> NextWaveEnemies { get; private set; } = new List<EnemyDefinition>();
-        public float SpawnInterval => _config != null ? _config.TimeBetweenSpawns : 1f; // Spawner bunu okuyacak
+        
+        // Aktif kuralı sakla ki sürekli arama yapmayalım
+        private WaveRule _currentRule;
 
         private void Start()
         {
             if (_config != null) _currentTotalBudget = _config.StartingBudget;
+        }
+
+        // [YENİ] Spawner bu fonksiyonu çağırıp bekleme süresini alacak
+        public float GetSpawnDelay(EnemyCategory category)
+        {
+            if (_config == null) return 1f;
+
+            // Eğer kural boşsa varsayılan değerler döndür
+            if (_currentRule.Equals(default(WaveRule))) return 1f;
+
+            switch (category)
+            {
+                case EnemyCategory.Swarm: return _currentRule.SwarmInterval;
+                case EnemyCategory.Rusher: return _currentRule.RusherInterval;
+                case EnemyCategory.Tank: return _currentRule.TankInterval;
+                default: return 1f;
+            }
         }
 
         [ContextMenu("Test: Generate Wave")]
@@ -29,31 +48,33 @@ namespace IndianOceanAssets.Engine2_5D.Managers
 
             NextWaveEnemies.Clear();
             
-            // 1. Kuralı Bul (Hangi yüzdeyi kullanacağız?)
-            WaveRule rule = _config.GetRuleForWave(_currentWaveNumber);
+            // 1. Kuralı Bul ve Kaydet
+            _currentRule = _config.GetRuleForWave(_currentWaveNumber);
             
-            // Eğer hiç kural yoksa varsayılan bir tane uydur (Hata almamak için)
-            if (rule.Equals(default(WaveRule))) 
+            if (_currentRule.Equals(default(WaveRule))) 
             {
-                Debug.LogWarning("⚠️ Uygun Kural Bulunamadı! Varsayılan %100 Swarm kullanılıyor.");
-                rule = new WaveRule { SwarmPercent = 100, RusherPercent = 0, TankPercent = 0 };
+                Debug.LogWarning("⚠️ Uygun Kural Bulunamadı! Varsayılanlar kullanılıyor.");
+                _currentRule = new WaveRule { SwarmPercent = 100, SwarmInterval = 0.5f };
             }
 
-            // 2. Bütçeyi Böl (Matematik)
-            // Yüzdeleri topla (Kullanıcı 100 yapmadıysa biz normalize ederiz)
-            float totalPercent = rule.SwarmPercent + rule.RusherPercent + rule.TankPercent;
-            if (totalPercent <= 0) totalPercent = 1; // Bölme hatası önlemi
+            // 2. Bütçeyi Böl
+            float totalPercent = _currentRule.SwarmPercent + _currentRule.RusherPercent + _currentRule.TankPercent;
+            if (totalPercent <= 0) totalPercent = 1;
 
-            float swarmBudget = _currentTotalBudget * (rule.SwarmPercent / totalPercent);
-            float rusherBudget = _currentTotalBudget * (rule.RusherPercent / totalPercent);
-            float tankBudget = _currentTotalBudget * (rule.TankPercent / totalPercent);
+            float swarmBudget = _currentTotalBudget * (_currentRule.SwarmPercent / totalPercent);
+            float rusherBudget = _currentTotalBudget * (_currentRule.RusherPercent / totalPercent);
+            float tankBudget = _currentTotalBudget * (_currentRule.TankPercent / totalPercent);
 
-            Debug.Log($"🧮 Dalga {_currentWaveNumber} Planı: %{rule.SwarmPercent} Swarm, %{rule.RusherPercent} Rusher, %{rule.TankPercent} Tank");
+            Debug.Log($"🧮 Dalga {_currentWaveNumber} Hazırlanıyor...");
 
-            // 3. Alışverişe Başla
+            // 3. Alışveriş
             FillBudget(swarmBudget, EnemyCategory.Swarm);
             FillBudget(rusherBudget, EnemyCategory.Rusher);
             FillBudget(tankBudget, EnemyCategory.Tank);
+            
+            // [OPTİMİZASYON] Listeyi karıştır (Shuffle) ki hepsi sırayla gelmesin
+            // Önce Tanklar, sonra Sürüler gelmesin; karışık gelsin.
+            ShuffleList(NextWaveEnemies);
         }
 
         private void FillBudget(float budget, EnemyCategory category)
@@ -69,6 +90,20 @@ namespace IndianOceanAssets.Engine2_5D.Managers
                 }
                 else break;
                 safety++;
+            }
+        }
+        
+        // Fisher-Yates Shuffle (Liste Karıştırıcı)
+        private void ShuffleList<T>(List<T> list)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = Random.Range(0, n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
             }
         }
 

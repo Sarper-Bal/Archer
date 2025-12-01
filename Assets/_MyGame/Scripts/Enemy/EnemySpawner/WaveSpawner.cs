@@ -12,14 +12,13 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         [Header("AI Bağlantısı")]
         [SerializeField] private SmartWaveManager _director;
         
-        [Header("Mola Ayarı")]
+        [Header("Genel Ayarlar")]
         [SerializeField] private float _timeBetweenWaves = 3f;
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
         
         private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
         private List<EnemyBehaviorController> _activeEnemies = new List<EnemyBehaviorController>();
         
-        // GC (Çöp) Önlemi
         private WaitForSeconds _checkInterval = new WaitForSeconds(0.5f); 
 
         public System.Action<int> OnWaveStarted; 
@@ -46,14 +45,16 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
                 OnWaveStarted?.Invoke(enemiesToSpawn.Count);
 
-                // 2. SPAWN (Sabit Hızla)
-                // Director'dan gelen sabit hızı kullan (Örn: 0.5 saniye)
-                WaitForSeconds spawnDelay = new WaitForSeconds(_director.SpawnInterval);
-
+                // 2. DİNAMİK SPAWN DÖNGÜSÜ
                 foreach (EnemyDefinition enemyData in enemiesToSpawn)
                 {
                     SpawnEnemy(enemyData);
-                    yield return spawnDelay; 
+
+                    // [YENİ] AI'ya sor: Bu düşman türü için kaç saniye bekleyeyim?
+                    float delay = _director.GetSpawnDelay(enemyData.Category);
+                    
+                    // Eğer 0 ise bekleme (Frame atlamasın diye null check yapılabilir)
+                    if (delay > 0) yield return new WaitForSeconds(delay);
                 }
 
                 // 3. BEKLEME (Son düşman ölene kadar)
@@ -70,9 +71,8 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             }
         }
 
-        // ... SpawnEnemy, GetFromPool, ReturnEnemyToPool metotları AYNEN KALACAK ...
-        // (Aşağısı önceki kodun aynısıdır, tekrar yazıp kalabalık yapmıyorum)
-        // Sadece SpawnEnemy içindeki "stats.InitializeRuntime(data)" satırını unutma.
+        // --- SpawnEnemy, GetFromPool, ReturnEnemyToPool, GetRandomPosition ---
+        // (Bu metotlar değişmedi, önceki kodun aynısı kalacak)
         
         private void SpawnEnemy(EnemyDefinition data)
         {
