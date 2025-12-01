@@ -3,44 +3,99 @@ using System.Collections;
 using System.Collections.Generic;
 using IndianOceanAssets.Engine2_5D; 
 using IndianOceanAssets.Engine2_5D.Spawners; 
+// [KRİTİK] WaypointRoute ve EnemyBehaviorController için gerekli namespace:
 using ArcadeBridge.ArcadeIdleEngine.Enemy; 
 
 namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 {
     public class WaveSpawner : MonoBehaviour
     {
-        [Header("Data (Beyin)")]
+        [Header("Pool Settings / Havuz Ayarları")]
+        [Tooltip("Prefab to use for pooling. / Havuza eklenecek düşman prefabı")]
+        [SerializeField] private EnemyBehaviorController _enemyPrefab; 
+        
+        [Tooltip("Initial pool size. / Oyun başında kaç düşman üretip hazır bekletelim?")]
+        [SerializeField] private int _initialPoolSize = 30;
+
+        [Header("Data (Brain)")]
         [SerializeField] private WaveConfig _waveConfig;
 
-        [Header("Alan Ayarları")]
+        [Header("Spawn Settings")]
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(5, 0, 5);
         [SerializeField] private WaypointRoute _forcePatrolRoute;
 
-        [Header("Durum (Debug)")]
-        [SerializeField] private int _currentWaveIndex = 0;
-        [SerializeField] private bool _isSpawning = false;
-        [SerializeField] private bool _waitingForCleave = false;
+        // [YENİ SİSTEM] Local Pool (Queue is O(1) - Fastest)
+        // Artık dışarıdaki ScriptableObject'e bağımlı değiliz.
+        private Queue<EnemyBehaviorController> _localEnemyPool = new Queue<EnemyBehaviorController>();
         
-        // Aktif düşmanları takip listesi
+        // Active enemies list / Aktif düşmanları takip listesi
         private List<EnemyBehaviorController> _activeEnemies = new List<EnemyBehaviorController>();
 
-        // [OPTİMİZASYON 1] Çöp oluşumunu (GC) engellemek için cache'lenmiş bekleme objeleri
+        // [OPTIMIZATION] Cached WaitForSeconds to avoid GC / Çöp oluşumunu önlemek için önbellek
         private WaitForSeconds _checkInterval; 
-        private WaitForSeconds _groupDelay;
+        private int _currentWaveIndex = 0;
 
-        // Eventler
         public System.Action<int, int> OnWaveChanged; 
         public System.Action OnAllWavesComplete;
 
+        private void Awake()
+        {
+            _checkInterval = new WaitForSeconds(0.5f);
+            
+            // [PREWARM] Fill the pool before game starts / Havuzu oyundan önce doldur
+            InitializeLocalPool();
+        }
+
+        private void InitializeLocalPool()
+        {
+            if (_enemyPrefab == null)
+            {
+                Debug.LogError("⚠️ WaveSpawner: Enemy Prefab is missing! / Düşman prefabı atanmamış!");
+                return;
+            }
+
+            for (int i = 0; i < _initialPoolSize; i++)
+            {
+                CreateNewEnemyForPool();
+            }
+        }
+
+        // Creates a new enemy and adds it to the pool / Yeni düşman yaratır ve havuza ekler
+        private EnemyBehaviorController CreateNewEnemyForPool()
+        {
+            EnemyBehaviorController enemy = Instantiate(_enemyPrefab, transform);
+            enemy.gameObject.SetActive(false);
+            
+            // [BAĞLANTI] Düşman öldüğünde bu spawner'a haber versin
+            enemy.OnReturnToPool = ReturnEnemyToPool;
+            
+            _localEnemyPool.Enqueue(enemy);
+            return enemy;
+        }
+
         private void Start()
         {
-            // [OPTİMİZASYON 1] Objeleri sadece oyun başında 1 kere yarat
-            _checkInterval = new WaitForSeconds(0.5f); 
-
             if (_waveConfig != null)
             {
                 StartCoroutine(ProcessWaves());
             }
+        }
+
+        // Callback function when enemy dies / Düşman öldüğünde çağrılan fonksiyon
+        private void ReturnEnemyToPool(EnemyBehaviorController enemy)
+        {
+            if (this == null || gameObject == null) return;
+
+            // Remove from active list
+            if (_activeEnemies.Contains(enemy))
+            {
+                _activeEnemies.Remove(enemy);
+            }
+
+            enemy.gameObject.SetActive(false);
+            
+            // Return to Queue / Kuyruğa geri koy
+            _localEnemyPool.Enqueue(enemy);
         }
 
         private IEnumerator ProcessWaves()
@@ -49,16 +104,11 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
             while (true)
             {
-                // Config bitti mi kontrolü
                 if (_currentWaveIndex >= _waveConfig.Waves.Count)
                 {
-                    if (_waveConfig.LoopWaves)
-                    {
-                        _currentWaveIndex = 0; 
-                    }
+                    if (_waveConfig.LoopWaves) _currentWaveIndex = 0; 
                     else
                     {
-                        Debug.Log("🎉 Tüm dalgalar tamamlandı!");
                         OnAllWavesComplete?.Invoke();
                         yield break; 
                     }
@@ -67,39 +117,26 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
                 WaveDefinition currentWave = _waveConfig.Waves[_currentWaveIndex];
                 OnWaveChanged?.Invoke(_currentWaveIndex + 1, _waveConfig.Waves.Count);
                 
-                // [OPTİMİZASYON 2] Yeni dalga başlamadan önce listeyi temizle (Toplu Temizlik)
-                CleanupDeadEnemiesImmediately(); 
+                Debug.Log($"🌊 Wave Started: {currentWave.WaveName}");
 
-                Debug.Log($"🌊 Dalga Başladı: {currentWave.WaveName}");
-
-                // 1. Düşmanları Üret
-                _isSpawning = true;
+                // 1. Spawn Groups
                 foreach (var group in currentWave.Groups)
                 {
                     yield return StartCoroutine(SpawnGroupRoutine(group));
                 }
-                _isSpawning = false;
 
-                // 2. Bekleme Mantığı (Ultra Optimize)
+                // 2. Wait for clear
                 if (currentWave.WaitForAllDead)
                 {
-                    _waitingForCleave = true;
-                    
-                    // Döngü içinde listeyi modifiye etmiyoruz (RemoveAt yok).
-                    // Sadece "Hala yaşayan var mı?" diye soruyoruz. Bu çok hızlıdır.
-                    while (IsAnyEnemyAlive())
+                    while (_activeEnemies.Count > 0)
                     {
-                        // Cachelenmiş wait kullanımı (Sıfır GC)
                         yield return _checkInterval; 
                     }
-                    _waitingForCleave = false;
                 }
 
-                // 3. Mola
+                // 3. Cooldown
                 if (currentWave.TimeToNextWave > 0)
-                {
                     yield return new WaitForSeconds(currentWave.TimeToNextWave);
-                }
 
                 _currentWaveIndex++;
             }
@@ -107,91 +144,56 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
         private IEnumerator SpawnGroupRoutine(WaveGroup group)
         {
-            if (group.EnemyPool == null) yield break;
-
-            // Grup içi bekleme süresini cache'leyelim (Eğer sabitse)
-            WaitForSeconds groupSpawnDelay = new WaitForSeconds(group.DelayBetweenSpawns);
+            WaitForSeconds delay = new WaitForSeconds(group.DelayBetweenSpawns);
 
             for (int i = 0; i < group.Count; i++)
             {
-                SpawnEnemy(group.EnemyPool);
-                
-                if (group.DelayBetweenSpawns > 0)
-                    yield return groupSpawnDelay;
+                SpawnFromPool(); // Eski 'SpawnEnemy(pool)' yerine bunu kullanıyoruz
+                if (group.DelayBetweenSpawns > 0) yield return delay;
             }
         }
 
-       private void SpawnEnemy(EnemyPool pool)
+        private void SpawnFromPool()
         {
-            // 1. Havuzdan düşmanı al (Bu sırada Pool onu otomatik açıyor, bu kötü)
-            EnemyBehaviorController enemy = pool.Get();
+            EnemyBehaviorController enemy;
 
-            // [DÜZELTME] Düşmanı hemen geri kapat!
-            // Böylece fizik motoru veya NavMesh onun eski yerinde uyandığını fark etmeyecek.
-            enemy.gameObject.SetActive(false); 
+            // Check if pool has available enemies / Havuzda asker var mı?
+            if (_localEnemyPool.Count > 0)
+            {
+                enemy = _localEnemyPool.Dequeue();
+            }
+            else
+            {
+                // Pool is empty, create new one (Auto-Expand) / Havuz boşsa yeni yarat
+                enemy = CreateNewEnemyForPool();
+                _localEnemyPool.Dequeue(); // Kuyruktan hemen al
+            }
 
-            // 2. Kimlik Kartını Ver
-            enemy.InitializePool(pool); 
-
-            // 3. Pozisyonu Ayarla (Artık kapalı olduğu için güvenle ışınlayabiliriz)
+            // Positioning / Konumlandırma
             Vector3 randomOffset = new Vector3(
                 Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2),
                 0,
                 Random.Range(-_spawnAreaSize.z / 2, _spawnAreaSize.z / 2)
             );
             
-            // Konumu ve Rotasyonu ata
             enemy.transform.position = transform.position + randomOffset;
             enemy.transform.rotation = transform.rotation;
 
-            // [EKSTRA GÜVENLİK] Eğer NavMeshAgent varsa onu da resetle (Warp)
-            // (Rigidbody kullanıyorsan bu blok çalışmaz ama zararı da yok)
-            if (enemy.TryGetComponent(out UnityEngine.AI.NavMeshAgent agent))
-            {
-                agent.Warp(transform.position + randomOffset);
-            }
-
-            // 4. Rotayı Ver
+            // Safe Activation / Güvenli Aktivasyon
+            enemy.gameObject.SetActive(true);
+            
+            // Assign Patrol Route / Devriye Rotası Ata
             if (_forcePatrolRoute != null)
             {
                 enemy.SetPatrolRoute(_forcePatrolRoute);
             }
 
-            // 5. Listeye Ekle
             _activeEnemies.Add(enemy);
-
-            // [FİNAL] Şimdi temiz bir sayfa ile, doğru konumda tekrar aç!
-            enemy.gameObject.SetActive(true);
-        }
-        // [OPTİMİZASYON 3] Bu fonksiyon sadece okuma yapar, yazma/silme yapmaz. O(N) ama çok hafif.
-        private bool IsAnyEnemyAlive()
-        {
-            for (int i = 0; i < _activeEnemies.Count; i++)
-            {
-                // Eğer referans null değilse VE obje aktifse, hala yaşayan var demektir.
-                if (_activeEnemies[i] != null && _activeEnemies[i].gameObject.activeSelf)
-                {
-                    return true; // Bir tane bulduk, döngüyü kır ve çık.
-                }
-            }
-            return false; // Hiçbiri aktif değil.
-        }
-
-        // Listeyi sadece dalga geçişlerinde toplu temizleriz.
-        private void CleanupDeadEnemiesImmediately()
-        {
-            for (int i = _activeEnemies.Count - 1; i >= 0; i--)
-            {
-                if (_activeEnemies[i] == null || !_activeEnemies[i].gameObject.activeSelf)
-                {
-                    _activeEnemies.RemoveAt(i);
-                }
-            }
         }
 
         private void OnDrawGizmos()
         {
-            Gizmos.color = _waitingForCleave ? Color.yellow : (_isSpawning ? Color.green : Color.red);
+            Gizmos.color = Color.cyan;
             Gizmos.DrawWireCube(transform.position, _spawnAreaSize);
         }
     }

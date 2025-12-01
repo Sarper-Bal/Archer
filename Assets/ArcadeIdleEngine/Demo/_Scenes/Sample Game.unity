@@ -2575,7 +2575,7 @@ Transform:
   m_GameObject: {fileID: 857429709}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5.97, y: 0.2, z: 3.67}
+  m_LocalPosition: {x: 5.97, y: 0.2, z: 6.73}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6983,6 +6983,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: "EnemyA\u0131"
+      objectReference: {fileID: 0}
+    - target: {fileID: 8282702779294200114, guid: 8efef095f9d5b446b9225776f7fad5e4,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

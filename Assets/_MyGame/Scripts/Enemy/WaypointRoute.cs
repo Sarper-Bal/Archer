@@ -1,37 +1,37 @@
 using UnityEngine;
 using System.Collections.Generic;
-using ArcadeBridge.ArcadeIdleEngine.Managers;
+// [ÖNEMLİ] RouteManager ve RouteID muhtemelen bu namespace'lerin içinde.
+// Eğer RouteID scriptine bakarsan namespace'i neyse onu buraya eklemelisin.
+using IndianOceanAssets.Engine2_5D; 
+using ArcadeBridge.ArcadeIdleEngine.Managers; 
 
 namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 {
     public class WaypointRoute : MonoBehaviour
     {
-        [Header("Kimlik (Zorunlu)")]
-        [Tooltip("Data üzerinden erişim için bu ID şarttır.")]
-        [SerializeField] private RouteID _routeID;
+        [Header("Identity (Required) / Kimlik (Zorunlu)")]
+        [Tooltip("This ID is required for access via Data. / Data üzerinden erişim için bu ID şarttır.")]
+        [SerializeField] private RouteID _routeID; // Bu tipin tanınması için yukarıdaki 'using' gereklidir.
 
-        [Header("Yol Noktaları")]
+        [Header("Waypoints / Yol Noktaları")]
         [SerializeField] private List<Transform> _waypoints = new List<Transform>();
         
-        [Header("Görselleştirme")]
+        [Header("Visualization / Görselleştirme")]
         [SerializeField] private Color _pathColor = Color.yellow;
         [SerializeField] private float _sphereRadius = 0.3f;
 
-        // [DÜZELTME] Kayıt durumunu takip eden değişken
         private bool _isRegistered = false;
 
         public List<Transform> Waypoints => _waypoints;
 
         private void OnEnable()
         {
-            // Obje her açıldığında sıfırla ve kaydetmeyi dene
             _isRegistered = false; 
             TryRegister();
         }
 
         private void Start()
         {
-            // Eğer OnEnable'da yönetici hazır değildiyse ve kayıt olamadıysak, şimdi tekrar dene.
             if (!_isRegistered)
             {
                 TryRegister();
@@ -40,20 +40,18 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 
         private void TryRegister()
         {
-            // Eğer zaten kayıtlıysam veya ID yoksa dur.
             if (_isRegistered || _routeID == null) return;
 
+            // RouteManager'a güvenli erişim
             if (RouteManager.Instance != null)
             {
                 RouteManager.Instance.RegisterRoute(_routeID, this);
-                _isRegistered = true; // [ÖNEMLİ] Artık kayıtlıyım, tekrar deneme.
+                _isRegistered = true;
             }
         }
         
         private void OnDisable()
         {
-            // İsteğe bağlı: Obje kapanırsa kaydı silebiliriz ama
-            // Manager şimdilik buna destek vermiyor, o yüzden sadece flag'i sıfırlıyoruz.
             _isRegistered = false;
         }
 

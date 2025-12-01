@@ -1,6 +1,6 @@
 using UnityEngine;
 using IndianOceanAssets.Engine2_5D;
-using ArcadeBridge.ArcadeIdleEngine.Managers;
+using ArcadeBridge.ArcadeIdleEngine.Managers; // RouteManager için
 
 namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 {
@@ -8,7 +8,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
     [RequireComponent(typeof(EnemyStats))]
     public class WaypointEnemyMover : MonoBehaviour
     {
-        [Header("Yol Ayarları")]
+        [Header("Path Settings / Yol Ayarları")]
         [SerializeField] private WaypointRoute _manualRoute; 
         [SerializeField] private float _rotationSpeed = 8f;
         [SerializeField] private float _arrivalDistance = 0.5f;
@@ -54,11 +54,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
         private void ResolveRoute()
         {
             if (_activeRoute != null) return;
+            
+            // 1. Manuel rota varsa onu kullan
             if (_manualRoute != null)
             {
                 _activeRoute = _manualRoute;
                 return;
             }
+            
+            // 2. Data'dan gelen ID ile rota bul
             if (_stats.Definition != null && _stats.Definition.PatrolRouteID != null)
             {
                 if (RouteManager.Instance != null)
@@ -74,16 +78,21 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 
             if (_isPathComplete || _currentTargetPoint == null || _stats.Definition == null) 
             {
-                #if UNITY_6000_0_OR_NEWER
-                _rb.linearVelocity = new Vector3(0, _rb.linearVelocity.y, 0);
-                #else
-                _rb.velocity = new Vector3(0, _rb.velocity.y, 0);
-                #endif
+                StopMovement();
                 return;
             }
 
             MoveAlongPath();
             CheckArrival();
+        }
+
+        private void StopMovement()
+        {
+            #if UNITY_6000_0_OR_NEWER
+            _rb.linearVelocity = new Vector3(0, _rb.linearVelocity.y, 0);
+            #else
+            _rb.velocity = new Vector3(0, _rb.velocity.y, 0);
+            #endif
         }
 
         private void MoveAlongPath()
@@ -166,7 +175,5 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
                 _isPathComplete = true;
             }
         }
-        
-        // [SİLİNDİ] OnCollisionEnter ve ExplodeAndDie kaldırıldı.
     }
 }
