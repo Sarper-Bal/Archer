@@ -16,7 +16,7 @@ MonoBehaviour:
   - WaveName: 01
     Groups:
     - EnemyPool: {fileID: 11400000, guid: 0711827b2321249059937d942f3e5e7c, type: 2}
-      Count: 5
+      Count: 100
       DelayBetweenSpawns: 1
     WaitForAllDead: 1
     TimeToNextWave: 3

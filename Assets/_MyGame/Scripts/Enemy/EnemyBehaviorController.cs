@@ -2,22 +2,23 @@ using UnityEngine;
 using ArcadeBridge.ArcadeIdleEngine.Experimental; 
 using ArcadeBridge.ArcadeIdleEngine.Enemy; 
 using ArcadeBridge.ArcadeIdleEngine.Spawners; 
+using DG.Tweening; // [EKLENDI] DOTween kütüphanesi
 
 namespace IndianOceanAssets.Engine2_5D
 {
     [RequireComponent(typeof(EnemyStats))]
     public class EnemyBehaviorController : MonoBehaviour
     {
-        [Header("Debug Bilgisi")]
+        [Header("Debug Info / Debug Bilgisi")]
         [SerializeField] private EnemyBehaviorType _currentBehavior;
 
-        // Script Referansları
+        // Script References / Script Referansları
         private EnemyStats _stats;
         private SimpleEnemyMover _simpleMover;
         private StalkerEnemyMover _stalkerMover;
         private WaypointEnemyMover _waypointMover;
 
-        // Düşmanın hangi havuzdan geldiğini hatırlaması gerek
+        // Needs to remember origin pool / Düşmanın hangi havuzdan geldiğini hatırlaması gerek
         private EnemyPool _originPool; 
 
         private void Awake()
@@ -35,6 +36,9 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void OnEnable()
         {
+            // [EKLENDI] Spawn Animation (Pop-up Effect) / Doğma Animasyonu
+            PlaySpawnAnimation();
+
             if (_stats != null && _stats.Definition != null)
             {
                 SetBehavior(_stats.Definition.DefaultBehavior);
@@ -49,12 +53,26 @@ namespace IndianOceanAssets.Engine2_5D
         {
             DisableAllBehaviors();
 
-            // Eğer bir havuzum varsa, beni o havuza geri iade et!
+            // [EKLENDI] Kill active tweens / Aktif tweenleri kapat (Havuzda sorun olmaması için)
+            transform.DOKill();
+
+            // Return to pool / Eğer bir havuzum varsa, beni o havuza geri iade et!
             if (_originPool != null)
             {
-                // [DÜZELTME] "Return" yerine "Release" yazdık.
+                // [FIX] Used "Release" instead of "Return" / "Return" yerine "Release" yazdık.
                 _originPool.Release(this); 
             }
+        }
+
+        // [EKLENDI] Cozy/Cartoon Spawn Effect
+        private void PlaySpawnAnimation()
+        {
+            // Önce scale'i sıfıra indiriyoruz (Görünmez oluyor)
+            transform.localScale = Vector3.zero;
+
+            // Sonra "OutBack" ease tipi ile (hafif taşarak) büyütüyoruz.
+            // Bu "jelibon" gibi bir çıkış hissi verir.
+            transform.DOScale(Vector3.one, 0.5f).SetEase(Ease.OutBack);
         }
 
         public void SetBehavior(EnemyBehaviorType newBehavior)
@@ -85,6 +103,7 @@ namespace IndianOceanAssets.Engine2_5D
             var rb = GetComponent<Rigidbody>();
             if (rb != null)
             {
+                // Unity 6000 compatibility check / Unity 6 uyumluluğu
                 #if UNITY_6000_0_OR_NEWER
                 rb.linearVelocity = Vector3.zero;
                 #else

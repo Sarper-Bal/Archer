@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50c8f96c71f9b4c6fa75e244f244e0d2, type: 3}
   m_Name: EnemyDefaulthPool
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Spawners.EnemyPool
-  MaxSize: 20
+  MaxSize: 100
   Behaviour: {fileID: 5729829292197405962, guid: 8efef095f9d5b446b9225776f7fad5e4,
     type: 3}
