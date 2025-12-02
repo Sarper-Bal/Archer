@@ -11,7 +11,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
     public class TowerManager : MonoBehaviour
     {
         [Header("💾 Kayıt Sistemi")]
-        [Tooltip("Kule seviyesini tutan IntVariable.")]
         [SerializeField] private IntVariable _levelVariable;
 
         [Header("💰 Ekonomi")]
@@ -19,11 +18,8 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
         [Header("🚀 Kule Gelişimi")]
         [SerializeField] private List<WeaponDefinition> _weaponLevels;
-        
-        [Tooltip("Yükseltme ücretleri. (Örn: 0. eleman = Lvl 1'den 2'ye geçiş ücreti)")]
         [SerializeField] private List<int> _upgradeCosts;
 
-        // [DEĞİŞİKLİK] Görsel kontrolcü referansı eklendi
         [Header("🎨 Görsel Kontrol")]
         [SerializeField] private TowerVisualController _visualController;
 
@@ -38,7 +34,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
         private void Awake()
         {
             _attacker = GetComponent<TowerAttacker>();
-            // Eğer VisualController inspector'dan atanmadıysa, aynı obje üzerinde aramayı dene
             if (_visualController == null) _visualController = GetComponent<TowerVisualController>();
         }
 
@@ -54,7 +49,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             if (CurrentLevelIndex >= _weaponLevels.Count) 
                 CurrentLevelIndex = _weaponLevels.Count - 1;
 
-            UpdateTowerState(); // [DEĞİŞİKLİK] İsim genelleştirildi (Hem silah hem görsel)
+            UpdateTowerState();
             InitializeUnlocker();
             
             Debug.Log($"🏰 Kule Hazır! Seviye: {CurrentLevelIndex + 1}");
@@ -78,17 +73,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
         {
             CurrentLevelIndex++;
 
-            UpdateTowerState(); // [DEĞİŞİKLİK] Hem silahı hem görseli güncelle
+            UpdateTowerState();
 
             if (CurrentLevelIndex < _upgradeCosts.Count)
             {
                 int nextCost = _upgradeCosts[CurrentLevelIndex];
                 _upgradeZone.SetRequiredResource(nextCost);
-                Debug.Log($"✅ Kule Yükseldi! Yeni Seviye: {CurrentLevelIndex + 1}. Sonraki Maliyet: {nextCost}");
             }
             else
             {
-                Debug.Log("🔥 Kule MAKSİMUM Seviyeye Ulaştı!");
                 StartCoroutine(DisableUpgradeZoneRoutine());
             }
         }
@@ -99,7 +92,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             if (_upgradeZone != null) _upgradeZone.gameObject.SetActive(false);
         }
 
-        // [DEĞİŞİKLİK] Bu fonksiyon artık hem silahı hem görseli yönetiyor
         private void UpdateTowerState()
         {
             // 1. Silahı Güncelle

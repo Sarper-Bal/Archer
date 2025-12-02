@@ -1,5 +1,5 @@
 using UnityEngine;
-using System; // Action eventi için gerekli
+using System; 
 using ArcadeBridge.ArcadeIdleEngine.Pools;
 using IndianOceanAssets.Engine2_5D; 
 
@@ -7,22 +7,17 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 {
     public class TowerAttacker : MonoBehaviour
     {
-        // [DEĞİŞİKLİK] Artık Inspector'dan elle verilmiyor, kod ile atanıyor.
-        // [SerializeField] private Transform _firePoint;  <- KALDIRILDI
-        // [SerializeField] private Transform _partToRotate; <- KALDIRILDI
-        
         [Header("🎯 Hedef Ayarları")]
         [SerializeField] private LayerMask _enemyLayer; 
 
-        // --- PUBLIC EVENT ---
-        // [DEĞİŞİKLİK] Ateş edildiğinde animasyon scriptinin duyması için event eklendi.
+        // --- Event Sistemi ---
         public event Action OnFired;
 
-        // --- ÇALIŞMA DEĞİŞKENLERİ ---
+        // --- Değişkenler ---
         private WeaponDefinition _currentWeapon; 
         private Transform _currentTarget;
         
-        // Dinamik Referanslar
+        // Dinamik Referanslar (Görsel değiştikçe güncellenir)
         private Transform _dynamicFirePoint;
         private Transform _dynamicRotatingPart;
 
@@ -33,7 +28,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
         private readonly Collider[] _hitBuffer = new Collider[20];
         private const float SEARCH_INTERVAL = 0.2f;
 
-        // [DEĞİŞİKLİK] VisualController bu metodu çağırarak referansları günceller
+        // Görsel kontrolcü bu metodu çağırarak referansları günceller
         public void UpdateVisualReferences(Transform newFirePoint, Transform newRotatingPart)
         {
             _dynamicFirePoint = newFirePoint;
@@ -89,9 +84,9 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
         private void FindClosestEnemy()
         {
-            // FirePoint yoksa (henüz atanmadıysa) kulenin kendi pozisyonunu kullan
             Vector3 center = _dynamicFirePoint != null ? _dynamicFirePoint.position : transform.position;
             
+            // GC Alloc yaratmaz
             int hitCount = Physics.OverlapSphereNonAlloc(center, _currentWeapon.Range, _hitBuffer, _enemyLayer);
             
             Transform closestEnemy = null;
@@ -100,7 +95,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             for (int i = 0; i < hitCount; i++)
             {
                 Collider hit = _hitBuffer[i];
-                // Tag kontrolü de eklenebilir ama LayerMask genelde yeterlidir.
                 if (hit != null && hit.gameObject.activeInHierarchy) 
                 {
                     float dSqrToTarget = (hit.transform.position - center).sqrMagnitude;
@@ -116,18 +110,22 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
         private void RotatePartToTarget()
         {
-            // [DEĞİŞİKLİK] Dinamik parça referansı kontrol ediliyor
+            // Parça yoksa veya hedef yoksa çık (Optimizasyon)
             if (_currentTarget == null || _dynamicRotatingPart == null) return;
 
-            Vector3 direction = (_currentTarget.position - _dynamicRotatingPart.position).normalized;
+            Vector3 direction = (_currentTarget.position - _dynamicRotatingPart.position);
             direction.y = 0; 
 
-            if (direction != Vector3.zero)
-            {
-                Quaternion lookRotation = Quaternion.LookRotation(direction);
-                float rotSpeed = _currentWeapon.RotationSpeed > 0 ? _currentWeapon.RotationSpeed : 10f;
-                _dynamicRotatingPart.rotation = Quaternion.Slerp(_dynamicRotatingPart.rotation, lookRotation, Time.deltaTime * rotSpeed);
-            }
+            // Çok yakınsa işlem yapma (Sıfıra bölme hatası önlemi)
+            if (direction.sqrMagnitude < 0.001f) return;
+
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+
+            // OPTİMİZASYON: Açı farkı çok azsa (0.5 derece) döndürme işlemini (Slerp) pas geç. CPU tasarrufu.
+            if (Quaternion.Angle(_dynamicRotatingPart.rotation, targetRotation) < 0.5f) return;
+
+            float rotSpeed = _currentWeapon.RotationSpeed > 0 ? _currentWeapon.RotationSpeed : 10f;
+            _dynamicRotatingPart.rotation = Quaternion.Slerp(_dynamicRotatingPart.rotation, targetRotation, Time.deltaTime * rotSpeed);
         }
 
         private void Attack()
@@ -136,7 +134,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
             BasicProjectile projectile = _currentWeapon.ProjectilePool.Get();
             
-            // [DEĞİŞİKLİK] Dinamik FirePoint kullanılıyor
             Vector3 spawnPos = _dynamicFirePoint != null ? _dynamicFirePoint.position : transform.position;
             
             projectile.transform.position = spawnPos;
@@ -144,7 +141,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             
             projectile.Initialize(_currentTarget, _currentWeapon.ProjectilePool, _currentWeapon);
 
-            // [DEĞİŞİKLİK] Event tetikleniyor (Animasyon oynaması için)
+            // Animasyonu tetikle
             OnFired?.Invoke();
         }
 
