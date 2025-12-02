@@ -6,13 +6,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 {
     public class TowerAttacker : MonoBehaviour
     {
-        [Header("Bağlantılar")]
+        [Header("🔧 Sabit Parçalar")]
+        [Tooltip("Merminin çıkacağı nokta. (Sabit)")]
         [SerializeField] private Transform _firePoint;  
-        [SerializeField] private LayerMask _enemyLayer; 
 
-        [Header("Görsel Ayarlar (Opsiyonel)")]
-        [Tooltip("Kulenin sadece bu parçası hedefe döner. Boş bırakırsan kule hiç dönmez.")]
+        [Tooltip("Kulenin dönen kafası. (Sabit)")]
         [SerializeField] private Transform _partToRotate; 
+        
+        [Header("🎯 Hedef Ayarları")]
+        [SerializeField] private LayerMask _enemyLayer; 
 
         // --- ÇALIŞMA DEĞİŞKENLERİ ---
         private WeaponDefinition _currentWeapon; 
@@ -31,7 +33,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             if (_currentWeapon != null)
             {
                 _sqrRange = _currentWeapon.Range * _currentWeapon.Range;
-                _nextAttackTime = 0; 
+                // Silah değiştiğinde bekleme süresini sıfırlama, hemen ateş edebilir
             }
         }
 
@@ -39,7 +41,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
         {
             if (_currentWeapon == null) return;
 
-            // 1. Hedef Kontrolü
             if (IsTargetInvalid())
             {
                 if (Time.time >= _nextSearchTime)
@@ -48,7 +49,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
                     _nextSearchTime = Time.time + SEARCH_INTERVAL;
                 }
             }
-            // 2. Saldırı Döngüsü
             else 
             {
                 float distSqr = (transform.position - _currentTarget.position).sqrMagnitude;
@@ -59,7 +59,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
                     return;
                 }
 
-                // [DÜZELTME] Artık sadece _partToRotate varsa döndürüyoruz
                 RotatePartToTarget();
 
                 if (Time.time >= _nextAttackTime)
@@ -77,19 +76,18 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
         private void FindClosestEnemy()
         {
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, _currentWeapon.Range, _hitBuffer, _enemyLayer);
+            Vector3 center = _firePoint != null ? _firePoint.position : transform.position;
+            int hitCount = Physics.OverlapSphereNonAlloc(center, _currentWeapon.Range, _hitBuffer, _enemyLayer);
             
             Transform closestEnemy = null;
             float closestDistanceSqr = Mathf.Infinity;
-            Vector3 currentPos = transform.position;
 
             for (int i = 0; i < hitCount; i++)
             {
                 Collider hit = _hitBuffer[i];
                 if (hit != null && hit.gameObject.activeInHierarchy && hit.CompareTag("Enemy"))
                 {
-                    float dSqrToTarget = (hit.transform.position - currentPos).sqrMagnitude;
-
+                    float dSqrToTarget = (hit.transform.position - center).sqrMagnitude;
                     if (dSqrToTarget < closestDistanceSqr)
                     {
                         closestDistanceSqr = dSqrToTarget;
@@ -100,12 +98,11 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             _currentTarget = closestEnemy;
         }
 
-        // [DÜZELTME] Kök objeyi değil, sadece atanan parçayı döndür
         private void RotatePartToTarget()
         {
+            // Dönecek parça yoksa işlem yapma (Sabit Kule)
             if (_currentTarget == null || _partToRotate == null) return;
 
-            // Hedefe yönelme (Y ekseni sabit kalsın diye düzeltme)
             Vector3 direction = (_currentTarget.position - _partToRotate.position).normalized;
             direction.y = 0; 
 
@@ -113,8 +110,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             {
                 Quaternion lookRotation = Quaternion.LookRotation(direction);
                 float rotSpeed = _currentWeapon.RotationSpeed > 0 ? _currentWeapon.RotationSpeed : 10f;
-                
-                // Sadece child objeyi döndür
                 _partToRotate.rotation = Quaternion.Slerp(_partToRotate.rotation, lookRotation, Time.deltaTime * rotSpeed);
             }
         }
@@ -124,8 +119,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
             if (_currentWeapon.ProjectilePool == null) return;
 
             BasicProjectile projectile = _currentWeapon.ProjectilePool.Get();
-            
-            // Ateş noktası yoksa kulenin merkezini kullan
             Vector3 spawnPos = _firePoint != null ? _firePoint.position : transform.position;
             
             projectile.transform.position = spawnPos;

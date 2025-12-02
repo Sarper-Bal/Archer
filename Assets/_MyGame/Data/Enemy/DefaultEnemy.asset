@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1b7d6576be00a4cb2ab0f4572fbf327c, type: 3}
   m_Name: DefaultEnemy
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyDefinition
-  Category: 1
+  Category: 0
   MoveSpeed: 10
   MaxHealth: 1
   ContactDamage: 1

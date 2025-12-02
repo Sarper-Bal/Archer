@@ -1,33 +1,36 @@
 using UnityEngine;
-using System.Collections; // IEnumerator için gerekli
+using System.Collections;
 using System.Collections.Generic;
 using IndianOceanAssets.Engine2_5D;
 using ArcadeBridge.ArcadeIdleEngine.Interactables;
+using ArcadeBridge.ArcadeIdleEngine.Data.Variables;
 
 namespace ArcadeBridge.ArcadeIdleEngine.Tower
 {
     [RequireComponent(typeof(TowerAttacker))]
     public class TowerManager : MonoBehaviour
     {
-        [Header("💰 Ekonomi Bağlantısı")]
-        [Tooltip("Kulenin dibindeki para toplama alanı (Child Obje).")]
+        [Header("💾 Kayıt Sistemi")]
+        [Tooltip("Kule seviyesini tutan IntVariable.")]
+        [SerializeField] private IntVariable _levelVariable;
+
+        [Header("💰 Ekonomi")]
         [SerializeField] private Unlocker _upgradeZone;
 
-        [Header("🚀 Kule Seviyeleri")]
-        [Tooltip("Seviye 1'den başlayarak silah listesi.")]
+        [Header("🚀 Kule Gelişimi (Sadece Silah)")]
         [SerializeField] private List<WeaponDefinition> _weaponLevels;
-
-        [Tooltip("Her seviye için yükseltme maliyeti. (Örn: Lvl1->Lvl2 için 100 altın)")]
+        
+        [Tooltip("Yükseltme ücretleri. (Örn: 0. eleman = Lvl 1'den 2'ye geçiş ücreti)")]
         [SerializeField] private List<int> _upgradeCosts;
 
-        [Header("🎨 Görsel Modeller")]
-        [Tooltip("Seviye değiştikçe açılacak modeller.")]
-        [SerializeField] private List<GameObject> _levelModels;
-
-        [Header("Durum (Debug)")]
-        [SerializeField] private int _currentLevelIndex = 0;
-
         private TowerAttacker _attacker;
+        
+        // Kayıtlı veriyi okuma/yazma yardımcısı
+        private int CurrentLevelIndex
+        {
+            get => _levelVariable != null ? _levelVariable.RuntimeValue : 0;
+            set { if (_levelVariable != null) _levelVariable.RuntimeValue = value; }
+        }
 
         private void Awake()
         {
@@ -36,76 +39,88 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
         private void Start()
         {
-            UpdateTowerState();
+            // Verilerin yüklenmesi için 1 kare bekle (Emin olmak için)
+            StartCoroutine(InitializeRoutine());
+        }
+        
+        private IEnumerator InitializeRoutine()
+        {
+            yield return null;
+            
+            // Kayıtlı seviyeyi kontrol et, sınırı aşmışsa düzelt
+            if (CurrentLevelIndex >= _weaponLevels.Count) 
+                CurrentLevelIndex = _weaponLevels.Count - 1;
+
+            // Silahı yükle ve fiyatı ayarla
+            UpdateTowerWeapon();
             InitializeUnlocker();
+            
+            Debug.Log($"🏰 Kule Hazır! Seviye: {CurrentLevelIndex + 1}");
         }
 
         private void InitializeUnlocker()
         {
             if (_upgradeZone == null) return;
 
-            if (_currentLevelIndex < _upgradeCosts.Count)
+            // Eğer daha yükselecek seviye varsa fiyatı Unlocker'a bildir
+            if (CurrentLevelIndex < _upgradeCosts.Count)
             {
-                int cost = _upgradeCosts[_currentLevelIndex];
-                _upgradeZone.SetRequiredResource(cost);
+                _upgradeZone.SetRequiredResource(_upgradeCosts[CurrentLevelIndex]);
             }
             else
             {
+                // Zaten son seviyedeyiz, kutuyu kapat
                 _upgradeZone.gameObject.SetActive(false);
             }
         }
 
-        // --- GÜNCELLENEN KISIM ---
+        // --- UNLOCKER BU FONKSİYONU ÇAĞIRIR ---
         public void OnUpgradePaid()
         {
-            _currentLevelIndex++;
-            UpdateTowerState();
+            // 1. Seviyeyi Artır (Kaydedilir)
+            CurrentLevelIndex++;
 
-            if (_currentLevelIndex < _upgradeCosts.Count)
+            // 2. Silahı Güçlendir
+            UpdateTowerWeapon();
+
+            // 3. Sıradaki Fiyatı Belirle veya Kapat
+            if (CurrentLevelIndex < _upgradeCosts.Count)
             {
-                // Bir sonraki seviye varsa fiyatı güncelle
-                int nextCost = _upgradeCosts[_currentLevelIndex];
+                int nextCost = _upgradeCosts[CurrentLevelIndex];
                 _upgradeZone.SetRequiredResource(nextCost);
-                Debug.Log($"✅ Kule Lvl {_currentLevelIndex + 1} oldu! Sıradaki Maliyet: {nextCost}");
+                Debug.Log($"✅ Kule Yükseldi! Yeni Seviye: {CurrentLevelIndex + 1}. Sonraki Maliyet: {nextCost}");
             }
             else
             {
-                // [DÜZELTME] Maksimum seviyeye ulaştık.
-                // Unlocker'ı hemen kapatırsak "Coroutine Error" verir çünkü Unlocker hala kendi kodunu bitirmedi.
-                // O yüzden "1 Frame Sonra Kapat" diyoruz.
-                Debug.Log("🔥 Kule MAKSİMUM seviyeye ulaştı!");
+                Debug.Log("🔥 Kule MAKSİMUM Seviyeye Ulaştı!");
+                // Unlocker hatasını önlemek için 1 kare sonra kapat
                 StartCoroutine(DisableUpgradeZoneRoutine());
             }
         }
 
-        // Güvenli kapatma için küçük bir zamanlayıcı
         private IEnumerator DisableUpgradeZoneRoutine()
         {
-            // Bu karenin bitmesini bekle (Unlocker işini bitirsin)
             yield return null; 
-            
-            // Şimdi güvenle kapatabiliriz
-            if (_upgradeZone != null)
-            {
-                _upgradeZone.gameObject.SetActive(false);
-            }
+            if (_upgradeZone != null) _upgradeZone.gameObject.SetActive(false);
         }
 
-        private void UpdateTowerState()
+        private void UpdateTowerWeapon()
         {
-            if (_currentLevelIndex < _weaponLevels.Count)
+            if (CurrentLevelIndex < _weaponLevels.Count)
             {
-                _attacker.SetWeapon(_weaponLevels[_currentLevelIndex]);
+                _attacker.SetWeapon(_weaponLevels[CurrentLevelIndex]);
             }
-
-            if (_levelModels != null && _levelModels.Count > 0)
-            {
-                for (int i = 0; i < _levelModels.Count; i++)
-                {
-                    if (_levelModels[i]) 
-                        _levelModels[i].SetActive(i == _currentLevelIndex);
-                }
-            }
+        }
+        
+        // Test Amaçlı Sıfırlama
+        [ContextMenu("🔄 Reset Tower Level")]
+        public void ResetTower()
+        {
+            CurrentLevelIndex = 0;
+            UpdateTowerWeapon();
+            InitializeUnlocker();
+            if (_upgradeZone) _upgradeZone.gameObject.SetActive(true);
+            Debug.Log("🔄 Kule Sıfırlandı.");
         }
     }
 }

@@ -169,14 +169,19 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 			
 			if (_collectedResource == _requiredResourceAmount)
 			{
-				_onUnlocked?.Invoke();
+				_onUnlocked?.Invoke(); // Burası tetiklenince TowerManager objeyi kapatıyor olabilir.
 				Completed?.Invoke(this);
 				StopSpending();
 
 				if (_workMultipleTimes)
 				{
-					SetRequiredResource(_requiredResourceAmount);
-					_cor = StartCoroutine(CheckInventory(_inventory));
+                    // [DÜZELTME] Eğer obje kapatıldıysa, Coroutine başlatmaya çalışma!
+                    // Bu kontrol hatayı %100 engeller.
+                    if (gameObject.activeInHierarchy)
+                    {
+					    SetRequiredResource(_requiredResourceAmount);
+					    _cor = StartCoroutine(CheckInventory(_inventory));
+                    }
 				}
 				else
 				{
