@@ -7,8 +7,8 @@ namespace IndianOceanAssets.Engine2_5D.Data
     [System.Serializable]
     public struct WaveRule
     {
-        [Tooltip("Bu kural hangi dalgada başlasın?")]
-        public int MinWave; 
+        [Tooltip("Bu kuralın geçerli olması için oyuncunun HANGİ DALGAYA ulaşması gerekir? (Örn: 5 yazarsan, oyuncu 5. dalgaya gelene kadar bu kural çalışmaz).")]
+        public int MinWinWave; 
 
         [Header("📊 Dağılım Oranları (Toplam 100 olmalı)")]
         [Range(0, 100)] public float SwarmPercent;
@@ -40,11 +40,13 @@ namespace IndianOceanAssets.Engine2_5D.Data
         public List<WaveRule> WaveRules = new List<WaveRule>();
 
         // --- YARDIMCI METOT ---
-        public WaveRule GetRuleForWave(int currentWave)
+        public WaveRule GetRuleForWave(int currentLevelReached)
         {
+            // Elimizdeki seviyeye (currentLevelReached) eşit veya küçük olan EN BÜYÜK kuralı bul.
+            // Örnek: Seviye 7 ise ve kurallar 1, 5, 10 ise -> 5. seviye kuralını getirir.
             return WaveRules
-                .Where(r => r.MinWave <= currentWave)
-                .OrderByDescending(r => r.MinWave)
+                .Where(r => r.MinWinWave <= currentLevelReached)
+                .OrderByDescending(r => r.MinWinWave)
                 .FirstOrDefault();
         }
     }

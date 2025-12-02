@@ -12,30 +12,37 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         [SerializeField] private EnemyDatabase _enemyDatabase;
 
         [Header("Debug - İzleme (Salt Okunur)")]
-        [SerializeField] private int _currentWaveNumber = 1;
+        [Tooltip("Oyuncunun şu an oynadığı seviye. Sadece kazandıkça artar.")]
+        [SerializeField] private int _currentWaveNumber = 1; 
+        
+        [Tooltip("Şu anki düşman satın alma bütçesi.")]
         [SerializeField] private float _currentTotalBudget;
+        
         [SerializeField] private bool _isSpawningInProgress = false; // Spawner hala çalışıyor mu?
         
         // HashSet: Liste gibi ama araması ve silmesi çok daha hızlıdır (O(1)).
-        // Ayrıca aynı düşmanı yanlışlıkla 2 kere eklemenizi engeller.
         private HashSet<EnemyBehaviorController> _activeEnemiesRegistry = new HashSet<EnemyBehaviorController>();
 
         // Spawner'ın okuyacağı liste
         public List<EnemyDefinition> NextWaveEnemies { get; private set; } = new List<EnemyDefinition>();
         
+        // Aktif kuralı sakla (SwarmInterval vs. için)
         private WaveRule _currentRule;
+
+        // [EVENT] WaveSpawner veya UI burayı dinleyebilir
+        public System.Action OnWaveCompleted; 
 
         // --- PUBLIC API (Spawner ve Düşmanlar Burayı Kullanacak) ---
 
         public void InitializeGame()
         {
             if (_config != null) _currentTotalBudget = _config.StartingBudget;
+            _currentWaveNumber = 1;
             _activeEnemiesRegistry.Clear();
         }
 
         /// <summary>
         /// Spawner, üretime başladığında bunu TRUE, bitirdiğinde FALSE yapar.
-        /// Bu sayede ilk düşman öldüğünde "Wave Bitti" sanmasını engelleriz.
         /// </summary>
         public void SetSpawningStatus(bool isInProgress)
         {
@@ -67,8 +74,6 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             if (_activeEnemiesRegistry.Contains(enemy))
             {
                 _activeEnemiesRegistry.Remove(enemy);
-                
-                // Kalan düşman sayısını kontrol et
                 CheckWaveCompletion();
             }
         }
@@ -82,7 +87,7 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
         }
 
-        // --- EKONOMİ VE DALGA OLUŞTURMA ---
+        // --- SPAWNER SORGULARI (Yeni Kural Sistemine Göre) ---
 
         public float GetSpawnDelay(EnemyCategory category)
         {
@@ -97,6 +102,8 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
         }
 
+        // --- DALGA OLUŞTURMA (GENERATE) ---
+
         public void GenerateNextWave()
         {
             if (_config == null || _enemyDatabase == null) return;
@@ -104,13 +111,18 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             NextWaveEnemies.Clear();
             _activeEnemiesRegistry.Clear(); // Yeni dalga için temizlik
             
+            // [DEĞİŞİKLİK] Artık MinWinWave'e göre kural seçiyor.
+            // _currentWaveNumber sadece kazandıkça arttığı için, oyuncu kaybederse
+            // aynı kural (veya bir önceki kural) geçerli olmaya devam eder.
             _currentRule = _config.GetRuleForWave(_currentWaveNumber);
             
             if (_currentRule.Equals(default(WaveRule))) 
             {
-                _currentRule = new WaveRule { SwarmPercent = 100, SwarmInterval = 0.5f };
+                // Eğer hiç kural yoksa varsayılan basit bir kural oluştur
+                _currentRule = new WaveRule { SwarmPercent = 100, SwarmInterval = 1.0f };
             }
 
+            // Dağılım Hesapla
             float totalPercent = _currentRule.SwarmPercent + _currentRule.RusherPercent + _currentRule.TankPercent;
             if (totalPercent <= 0) totalPercent = 1;
 
@@ -118,12 +130,14 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             float rusherBudget = _currentTotalBudget * (_currentRule.RusherPercent / totalPercent);
             float tankBudget = _currentTotalBudget * (_currentRule.TankPercent / totalPercent);
 
-            Debug.Log($"🧮 Dalga {_currentWaveNumber} Hazırlanıyor. Bütçe: {_currentTotalBudget}");
+            Debug.Log($"🧮 Dalga {_currentWaveNumber} (MinWinWave: {_currentRule.MinWinWave}) Hazırlanıyor. Bütçe: {_currentTotalBudget:F0}");
 
+            // Alışveriş Yap
             FillBudget(swarmBudget, EnemyCategory.Swarm);
             FillBudget(rusherBudget, EnemyCategory.Rusher);
             FillBudget(tankBudget, EnemyCategory.Tank);
             
+            // Listeyi Karıştır (Shuffle)
             ShuffleList(NextWaveEnemies);
         }
 
@@ -138,11 +152,12 @@ namespace IndianOceanAssets.Engine2_5D.Managers
                     NextWaveEnemies.Add(enemy);
                     budget -= enemy.ThreatScore;
                 }
-                else break;
+                else break; // Bu bütçeye uygun düşman kalmadı
                 safety++;
             }
         }
         
+        // Fisher-Yates Shuffle
         private void ShuffleList<T>(List<T> list)
         {
             int n = list.Count;
@@ -154,30 +169,33 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
         }
 
-        // [EVENT] WaveSpawner burayı dinleyebilir (Action eklenebilir)
-        public System.Action OnWaveCompleted; 
-
         public void OnWaveWon()
         {
-            Debug.Log($"🎉 WAVE {_currentWaveNumber} TAMAMLANDI! (Tüm düşmanlar temizlendi)");
+            Debug.Log($"🎉 WAVE {_currentWaveNumber} TAMAMLANDI! Bütçe Artıyor.");
             
             float bonus = _currentTotalBudget * _config.WinGrowthPercentage;
             _currentTotalBudget += bonus;
+            
+            // [ÖNEMLİ] Seviye sadece burada artar. Kaybederse artmaz.
             _currentWaveNumber++;
             
-            // Spawner'a "Ben bittim" sinyali gönder
             OnWaveCompleted?.Invoke();
         }
 
         public void OnWaveLost()
         {
+            Debug.Log($"💀 WAVE {_currentWaveNumber} KAYBEDİLDİ. Bütçe Azalıyor.");
+
             float penalty = _currentTotalBudget * _config.LossPenaltyPercentage;
             _currentTotalBudget -= penalty;
-            if (_currentTotalBudget < _config.StartingBudget) _currentTotalBudget = _config.StartingBudget;
+            
+            if (_currentTotalBudget < _config.StartingBudget) 
+                _currentTotalBudget = _config.StartingBudget;
+                
+            // Not: _currentWaveNumber'ı artırmıyoruz! Oyuncu aynı seviyeyi tekrar deneyecek.
         }
         
         // --- FAILSAFE (GÜVENLİK SİGORTASI) ---
-        // Eğer bir şekilde sayı takılı kalırsa diye her 5 saniyede bir çalışır
         private void Start()
         {
             InitializeGame();
@@ -194,7 +212,7 @@ namespace IndianOceanAssets.Engine2_5D.Managers
                 // Eğer spawn bitti görünüyorsa ama sistemde hala adam var görünüyorsa...
                 if (!_isSpawningInProgress && _activeEnemiesRegistry.Count > 0)
                 {
-                    // Registry'deki elemanları kontrol et, ölmüş veya null olanları temizle
+                    // Ölmüş veya yok olmuş objeleri temizle
                     _activeEnemiesRegistry.RemoveWhere(e => e == null || !e.gameObject.activeInHierarchy);
                     
                     // Temizlik sonrası kimse kalmadıysa bitir

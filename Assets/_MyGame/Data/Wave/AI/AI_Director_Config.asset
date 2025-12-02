@@ -16,7 +16,14 @@ MonoBehaviour:
   WinGrowthPercentage: 0.2
   LossPenaltyPercentage: 0.1
   WaveRules:
-  - MinWave: 1
+  - MinWinWave: 0
+    SwarmPercent: 100
+    RusherPercent: 0
+    TankPercent: 0
+    SwarmInterval: 1
+    RusherInterval: 0
+    TankInterval: 0
+  - MinWinWave: 2
     SwarmPercent: 100
     RusherPercent: 0
     TankPercent: 0
