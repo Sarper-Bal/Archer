@@ -16,64 +16,77 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         [SerializeField] private float _timeBetweenWaves = 3f;
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
         
+        // Basit Obje Havuzu (Queue yapısı)
         private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
-        private List<EnemyBehaviorController> _activeEnemies = new List<EnemyBehaviorController>();
-        
-        private WaitForSeconds _checkInterval = new WaitForSeconds(0.5f); 
 
         public System.Action<int> OnWaveStarted; 
-        public System.Action OnWaveCleared;
 
         private void Start()
         {
-            if (_director != null) StartCoroutine(GameLoopRoutine());
-        }
-
-        private IEnumerator GameLoopRoutine()
-        {
-            while (true)
+            if (_director != null)
             {
-                // 1. HAZIRLIK
-                _director.GenerateNextWave(); 
-                List<EnemyDefinition> enemiesToSpawn = _director.NextWaveEnemies;
-                
-                if (enemiesToSpawn.Count == 0)
-                {
-                    yield return new WaitForSeconds(1f);
-                    continue; 
-                }
-
-                OnWaveStarted?.Invoke(enemiesToSpawn.Count);
-
-                // 2. DİNAMİK SPAWN DÖNGÜSÜ
-                foreach (EnemyDefinition enemyData in enemiesToSpawn)
-                {
-                    SpawnEnemy(enemyData);
-
-                    // [YENİ] AI'ya sor: Bu düşman türü için kaç saniye bekleyeyim?
-                    float delay = _director.GetSpawnDelay(enemyData.Category);
-                    
-                    // Eğer 0 ise bekleme (Frame atlamasın diye null check yapılabilir)
-                    if (delay > 0) yield return new WaitForSeconds(delay);
-                }
-
-                // 3. BEKLEME (Son düşman ölene kadar)
-                Debug.Log("⚔️ Spawn bitti, savaş devam ediyor...");
-                while (_activeEnemies.Count > 0)
-                {
-                    yield return _checkInterval; 
-                }
-
-                // 4. BİTİŞ
-                _director.OnWaveWon(); 
-                OnWaveCleared?.Invoke();
-                yield return new WaitForSeconds(_timeBetweenWaves);
+                // Manager dalga bitti dediğinde bir sonraki dalgayı başlatmak için abone ol
+                _director.OnWaveCompleted += StartNextWaveAfterDelay;
+                StartCoroutine(StartFirstWaveRoutine());
             }
         }
 
-        // --- SpawnEnemy, GetFromPool, ReturnEnemyToPool, GetRandomPosition ---
-        // (Bu metotlar değişmedi, önceki kodun aynısı kalacak)
-        
+        private void OnDestroy()
+        {
+            if (_director != null) _director.OnWaveCompleted -= StartNextWaveAfterDelay;
+        }
+
+        private IEnumerator StartFirstWaveRoutine()
+        {
+            yield return new WaitForSeconds(1f); // Oyun açılışında biraz bekle
+            StartCoroutine(SpawnWaveRoutine());
+        }
+
+        private void StartNextWaveAfterDelay()
+        {
+            StartCoroutine(WaitAndStartWave());
+        }
+
+        private IEnumerator WaitAndStartWave()
+        {
+            yield return new WaitForSeconds(_timeBetweenWaves);
+            StartCoroutine(SpawnWaveRoutine());
+        }
+
+        private IEnumerator SpawnWaveRoutine()
+        {
+            // 1. Manager'a yeni listeyi hazırlat
+            _director.GenerateNextWave(); 
+            List<EnemyDefinition> enemiesToSpawn = _director.NextWaveEnemies;
+            
+            // Eğer liste boşsa (Hata durumu), kısa bekle ve tekrar dene
+            if (enemiesToSpawn.Count == 0)
+            {
+                Debug.LogWarning("⚠️ Wave listesi boş geldi! Tekrar deneniyor...");
+                _director.OnWaveWon(); // Wave'i pas geç
+                yield break;
+            }
+
+            OnWaveStarted?.Invoke(enemiesToSpawn.Count);
+
+            // 2. Manager'a "Üretime Başladım, sakın oyunu bitirme" de
+            _director.SetSpawningStatus(true);
+
+            // 3. Tek tek üret
+            foreach (EnemyDefinition enemyData in enemiesToSpawn)
+            {
+                SpawnEnemy(enemyData);
+
+                // Gecikme süresini al
+                float delay = _director.GetSpawnDelay(enemyData.Category);
+                if (delay > 0) yield return new WaitForSeconds(delay);
+            }
+
+            // 4. Üretim bitti, Manager'a "Benim işim bitti, gerisi sende" de
+            Debug.Log("✅ Tüm düşmanlar sahneye sürüldü.");
+            _director.SetSpawningStatus(false);
+        }
+
         private void SpawnEnemy(EnemyDefinition data)
         {
             EnemyBehaviorController enemy = GetFromPool(data);
@@ -87,9 +100,12 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             if (stats != null) stats.InitializeRuntime(data);
 
             enemy.gameObject.SetActive(true);
-            _activeEnemies.Add(enemy);
+            
+            // [KRİTİK] Düşmanı Manager'a kaydet (Nüfus müdürlüğüne bildir)
+            _director.RegisterEnemy(enemy);
         }
         
+        // --- Pool Mantığı (Aynı kaldı) ---
         private EnemyBehaviorController GetFromPool(EnemyDefinition data)
         {
             string key = data.name;
@@ -111,9 +127,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
         private void ReturnEnemyToPool(EnemyBehaviorController enemy)
         {
-            if (this == null) return;
-            if (_activeEnemies.Contains(enemy)) _activeEnemies.Remove(enemy);
-            enemy.gameObject.SetActive(false);
+            enemy.gameObject.SetActive(false); // Disable olduğunda Manager'dan otomatik düşecek
 
             var stats = enemy.GetComponent<EnemyStats>();
             if (stats != null && stats.Definition != null)

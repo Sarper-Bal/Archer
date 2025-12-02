@@ -2,6 +2,7 @@ using UnityEngine;
 using ArcadeBridge.ArcadeIdleEngine.Experimental; 
 using ArcadeBridge.ArcadeIdleEngine.Enemy; 
 using ArcadeBridge.ArcadeIdleEngine.Spawners; 
+using IndianOceanAssets.Engine2_5D.Managers; // SmartWaveManager için
 
 namespace IndianOceanAssets.Engine2_5D
 {
@@ -16,6 +17,9 @@ namespace IndianOceanAssets.Engine2_5D
         private SimpleEnemyMover _simpleMover;
         private StalkerEnemyMover _stalkerMover;
         private WaypointEnemyMover _waypointMover;
+        
+        // Cachelenmiş Manager (Performans için her karede Find yapmamak adına)
+        private SmartWaveManager _cachedWaveManager;
 
         // Eve Dönüş Bileti
         public System.Action<EnemyBehaviorController> OnReturnToPool;
@@ -26,12 +30,13 @@ namespace IndianOceanAssets.Engine2_5D
             _simpleMover = GetComponent<SimpleEnemyMover>();
             _stalkerMover = GetComponent<StalkerEnemyMover>();
             _waypointMover = GetComponent<WaypointEnemyMover>();
+            
+            // Sahnedeki manager'ı bul ve sakla (Bunu sadece 1 kere yapar)
+            _cachedWaveManager = FindObjectOfType<SmartWaveManager>();
         }
 
         private void OnEnable()
         {
-            // [NOT] Animasyon kodları buradan kaldırıldı. Artık 'EnemyVisuals' hallediyor.
-
             if (_stats != null && _stats.Definition != null)
             {
                 SetBehavior(_stats.Definition.DefaultBehavior);
@@ -40,13 +45,22 @@ namespace IndianOceanAssets.Engine2_5D
             {
                 SetBehavior(EnemyBehaviorType.SimpleChaser);
             }
+            
+            // [NOT] Register işlemi Spawner tarafından yapılıyor, burada gerek yok.
+            // Ama çift dikiş olsun derseniz buraya da _cachedWaveManager.RegisterEnemy(this) eklenebilir.
         }
 
         private void OnDisable()
         {
             DisableAllBehaviors();
             
-            // Spawner'a beni geri alması için haber ver
+            // [KRİTİK] Sahneden çıkarken (ölüm veya pool) kaydını sildir!
+            if (_cachedWaveManager != null)
+            {
+                _cachedWaveManager.UnregisterEnemy(this);
+            }
+            
+            // Spawner'a beni geri alması için haber ver (Pool sistemi)
             OnReturnToPool?.Invoke(this);
         }
 

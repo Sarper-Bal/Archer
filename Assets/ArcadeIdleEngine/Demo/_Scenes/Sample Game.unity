@@ -2946,7 +2946,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Spawners.WaveSpawner
   _director: {fileID: 2147244072}
   _timeBetweenWaves: 5
-  _spawnAreaSize: {x: 1, y: 0, z: 1}
+  _spawnAreaSize: {x: 3, y: 0, z: 3}
 --- !u!1 &872524373 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4306347848762786826, guid: 9e96dc8ccf06b43b280a494d6771e6b2,
@@ -4029,6 +4029,7 @@ GameObject:
   - component: {fileID: 1271283267}
   - component: {fileID: 1271283266}
   - component: {fileID: 1271283269}
+  - component: {fileID: 1271283270}
   m_Layer: 0
   m_Name: Tower
   m_TagString: Untagged
@@ -4102,6 +4103,27 @@ MonoBehaviour:
   _levelVisuals:
   - {fileID: 268024927}
   - {fileID: 343051943}
+--- !u!114 &1271283270
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1271283265}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80922fa6dec52454a8ce980318de9036, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Tower.TowerAnimationController
+  _mode: 1
+  _visualRoot: {fileID: 348654626}
+  _punchVector: {x: 0.1, y: 0.1, z: 0.1}
+  _punchDuration: 0.2
+  _vibrato: 10
+  _recoilStrength: {x: -15, y: 0, z: 0}
+  _recoilDuration: 0.15
+  _elasticStrength: {x: 0.1, y: -0.1, z: 0.1}
+  _elasticDuration: 0.4
 --- !u!1001 &1308710448
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7624,6 +7646,7 @@ MonoBehaviour:
   _enemyDatabase: {fileID: 11400000, guid: 6534a629395a14994bba8607110a58e4, type: 2}
   _currentWaveNumber: 1
   _currentTotalBudget: 0
+  _isSpawningInProgress: 0
 --- !u!4 &2147244073
 Transform:
   m_ObjectHideFlags: 0
