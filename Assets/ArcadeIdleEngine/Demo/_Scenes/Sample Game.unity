@@ -1083,7 +1083,7 @@ GameObject:
   - component: {fileID: 340760475}
   - component: {fileID: 340760474}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1175,9 +1175,9 @@ Transform:
   m_GameObject: {fileID: 340760473}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.04, y: 0.77, z: 0.84}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalPosition: {x: 2.04, y: 0.77, z: 1.99}
+  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 4898092785113279139}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -8548,6 +8548,7 @@ GameObject:
   - component: {fileID: 4898092785113279139}
   - component: {fileID: 4898092785113279138}
   - component: {fileID: 4898092785113279140}
+  - component: {fileID: 4898092785113279142}
   - component: {fileID: 4898092785113279141}
   m_Layer: 0
   m_Name: WoodenGate
@@ -8590,8 +8591,8 @@ Transform:
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children:
-  - {fileID: 4898092785065621125}
   - {fileID: 340760477}
+  - {fileID: 4898092785065621125}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4898092785113279140
@@ -8606,13 +8607,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4e1fe263f9214fb4b213b4dfbfb31b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Interactables.DestructibleBarrier
-  _maxHealth: 100
+  _maxHealth: 20
   _barrierModel: {fileID: 340760473}
   _uiCanvas: {fileID: 4898092785065621120}
   _fillBar: {fileID: 4898092784754232335}
   _healthText: {fileID: 4898092785320285043}
-  _destructionParticles: {fileID: 5246406977990302780, guid: f19c76183b5e22e44a73655dc18f1a92,
-    type: 3}
+  _destructionParticles: {fileID: 0}
 --- !u!208 &4898092785113279141
 NavMeshObstacle:
   m_ObjectHideFlags: 0
@@ -8629,6 +8629,28 @@ NavMeshObstacle:
   m_CarveOnlyStationary: 1
   m_Center: {x: 0, y: 0, z: 0}
   m_TimeToStationary: 0.5
+--- !u!114 &4898092785113279142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4898092785113279137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 096b67847abbe4dbfb7444d89b33e0e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Interactables.BarrierAnimationController
+  _mode: 3
+  _visualModel: {fileID: 340760477}
+  _punchStrength: {x: 0.1, y: 0.1, z: 0.1}
+  _punchDuration: 0.15
+  _punchVibrato: 10
+  _shakeStrength: {x: 0, y: 0, z: 5}
+  _shakeDuration: 0.2
+  _shakeVibrato: 10
+  _jellyStrength: {x: 0.1, y: -0.1, z: 0.1}
+  _jellyDuration: 0.4
 --- !u!1 &4898092785320285041
 GameObject:
   m_ObjectHideFlags: 0

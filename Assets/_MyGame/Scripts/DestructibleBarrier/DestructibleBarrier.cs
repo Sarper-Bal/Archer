@@ -1,8 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using IndianOceanAssets.Engine2_5D; // DeathEffectPool ve IDamageable burada
-using DG.Tweening;
+using IndianOceanAssets.Engine2_5D; 
 
 namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 {
@@ -23,11 +22,11 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private float _currentHealth;
         private bool _isDestroyed = false;
 
-        // IDamageable Özellikleri
         public bool IsDead => _isDestroyed;
         public float CurrentHealth => _currentHealth;
 
-        // Eventler
+        // --- EVENT SİSTEMİ ---
+        // Animasyon scripti burayı dinleyecek
         public event System.Action<float> OnHealthChanged;
         public event System.Action OnDeath;
         public event System.Action OnDamageTaken;
@@ -37,30 +36,23 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             ResetBarrier();
         }
 
-        // [DÜZELTME] Namespace hatası giderildi.
-        // Artık doğrudan 'DeathEffectPool' sınıfını kullanıyor.
         public void InitializeHealth(float maxHealth, DeathEffectPool deathPool) 
         {
             _maxHealth = maxHealth;
             ResetBarrier();
         }
 
-        // Düşman Burayı Çağıracak
         public void TakeDamage(float amount)
         {
             if (_isDestroyed) return;
 
             _currentHealth -= amount;
+            
+            // 1. Olayı Tetikle (Animasyon scripti bunu duyacak)
             OnDamageTaken?.Invoke();
             
+            // 2. UI Güncelle (Sadece metin/bar, animasyon yok)
             UpdateUI();
-
-            // Vuruş efekti (Sallanma)
-            if (_uiCanvas) 
-            {
-                _uiCanvas.transform.DOKill(true);
-                _uiCanvas.transform.DOPunchScale(Vector3.one * 0.15f, 0.1f, 5, 1);
-            }
 
             if (_currentHealth <= 0)
             {
@@ -68,7 +60,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             }
         }
 
-        // Diğer Zorunlu Interface Metodları
         public void Heal(float amount) { } 
         public void ResetHealth() => ResetBarrier();
 
@@ -77,18 +68,13 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             _isDestroyed = true;
             OnDeath?.Invoke();
 
-            // 1. Görselleri Kapat
             if (_barrierModel) _barrierModel.SetActive(false);
             if (_uiCanvas) _uiCanvas.gameObject.SetActive(false);
-
-            // 2. Efekt Oynat
             if (_destructionParticles) _destructionParticles.Play();
 
-            // 3. Yolu Aç: NavMeshObstacle'ı kapat
             var navObstacle = GetComponent<UnityEngine.AI.NavMeshObstacle>();
             if (navObstacle) navObstacle.enabled = false;
             
-            // 4. Fiziksel Collider'ı kapat (İçinden geçilsin)
             var col = GetComponent<Collider>();
             if (col) col.enabled = false;
         }
