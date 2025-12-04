@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using IndianOceanAssets.Engine2_5D; 
-using IndianOceanAssets.Engine2_5D.Managers; // SmartWaveManager'a erişim için
+using IndianOceanAssets.Engine2_5D.Managers; 
 using DG.Tweening;
 
 namespace ArcadeBridge.ArcadeIdleEngine.Interactables
@@ -23,7 +23,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         
         private float _currentHealth;
         private bool _isDestroyed = false;
-        private SmartWaveManager _waveManager; // [YENİ] Manager Referansı
+        private SmartWaveManager _waveManager; 
 
         public bool IsDead => _isDestroyed;
         public float CurrentHealth => _currentHealth;
@@ -34,24 +34,24 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 
         private void Awake()
         {
-            // [YENİ] Sahnedeki Manager'ı bul
             _waveManager = FindObjectOfType<SmartWaveManager>();
         }
 
-        private void OnEnable()
+        private void Start()
         {
-            ResetBarrier();
-            
-            // [YENİ] Reset olayına abone ol
+            if (_waveManager == null) _waveManager = FindObjectOfType<SmartWaveManager>();
+
             if (_waveManager != null)
+            {
                 _waveManager.OnGameReset += ResetBarrier;
+            }
+            
+            ResetBarrier();
         }
 
-        private void OnDisable()
+        private void OnDestroy()
         {
-            // [YENİ] Abonelikten çık (Memory Leak önlemi)
-            if (_waveManager != null)
-                _waveManager.OnGameReset -= ResetBarrier;
+            if (_waveManager != null) _waveManager.OnGameReset -= ResetBarrier;
         }
 
         public void InitializeHealth(float maxHealth, DeathEffectPool deathPool) 
@@ -75,15 +75,12 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         }
 
         public void Heal(float amount) { } 
-
-        // [GÜNCELLEME] Bu fonksiyon artık public değilse de Interface gereği public kalmalı
-        // Ama asıl çağrıyı Event üzerinden alıyor.
         public void ResetHealth() => ResetBarrier();
 
         private void BreakBarrier()
         {
             _isDestroyed = true;
-            OnDeath?.Invoke(); // BaseObjectiveController burayı dinleyecek
+            OnDeath?.Invoke();
 
             if (_barrierModel) _barrierModel.SetActive(false);
             if (_uiCanvas) _uiCanvas.gameObject.SetActive(false);
@@ -97,29 +94,38 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         }
 
         private void ResetBarrier()
-        {
-            _currentHealth = _maxHealth;
-            _isDestroyed = false;
+{
+    _currentHealth = _maxHealth;
+    _isDestroyed = false;
 
-            if (_barrierModel) _barrierModel.SetActive(true);
-            if (_uiCanvas) _uiCanvas.gameObject.SetActive(true);
-            
-            var navObstacle = GetComponent<UnityEngine.AI.NavMeshObstacle>();
-            if (navObstacle) navObstacle.enabled = true;
+    if (_barrierModel) 
+    {
+        _barrierModel.SetActive(true);
+        // [EKLEME] Modelin transformunu da sıfırla (AnimationController yapamzsa diye yedek)
+        // _barrierModel.transform.localScale = Vector3.one; // (Gerekirse bu yorumu aç)
+    }
 
-            var col = GetComponent<Collider>();
-            if (col) col.enabled = true;
+    if (_uiCanvas) 
+    {
+        _uiCanvas.gameObject.SetActive(true);
+        // [EKLEME] Canvas boyutunu zorla düzelt. DOTween bazen burayı da bozabilir.
+        _uiCanvas.transform.localScale = Vector3.one; 
+    }
+    
+    var navObstacle = GetComponent<UnityEngine.AI.NavMeshObstacle>();
+    if (navObstacle) navObstacle.enabled = true;
 
-            UpdateUI();
-        }
+    var col = GetComponent<Collider>();
+    if (col) col.enabled = true;
 
+    UpdateUI();
+    
+    Debug.Log($"♻️ {gameObject.name}: Tamir edildi ve görseller resetlendi.");
+}
         private void UpdateUI()
         {
-            if (_healthText != null)
-                _healthText.text = Mathf.Max(0, _currentHealth).ToString("F0");
-
-            if (_fillBar != null)
-                _fillBar.fillAmount = _currentHealth / _maxHealth;
+            if (_healthText != null) _healthText.text = Mathf.Max(0, _currentHealth).ToString("F0");
+            if (_fillBar != null) _fillBar.fillAmount = _currentHealth / _maxHealth;
         }
     }
 }

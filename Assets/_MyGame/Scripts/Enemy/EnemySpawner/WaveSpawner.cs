@@ -16,7 +16,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         [SerializeField] private float _timeBetweenWaves = 3f;
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
         
-        // Basit Obje Havuzu (Queue yapısı)
         private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
 
         public System.Action<int> OnWaveStarted; 
@@ -25,25 +24,40 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         {
             if (_director != null)
             {
-                // Manager dalga bitti dediğinde bir sonraki dalgayı başlatmak için abone ol
                 _director.OnWaveCompleted += StartNextWaveAfterDelay;
+                // [DÜZELTME] Reset durumunda spawner'ı durdurmak için abone ol
+                _director.OnGameReset += StopAndResetSpawner;
+                
                 StartCoroutine(StartFirstWaveRoutine());
             }
         }
 
         private void OnDestroy()
         {
-            if (_director != null) _director.OnWaveCompleted -= StartNextWaveAfterDelay;
+            if (_director != null) 
+            {
+                _director.OnWaveCompleted -= StartNextWaveAfterDelay;
+                _director.OnGameReset -= StopAndResetSpawner;
+            }
+        }
+
+        // [YENİ] ACİL DURDURMA BUTONU
+        private void StopAndResetSpawner()
+        {
+            StopAllCoroutines(); // O anki spawn işlemini bıçak gibi kes
+            Debug.Log("🛑 Spawner: Reset sinyali alındı, üretim iptal edildi.");
         }
 
         private IEnumerator StartFirstWaveRoutine()
         {
-            yield return new WaitForSeconds(1f); // Oyun açılışında biraz bekle
+            yield return new WaitForSeconds(1f); 
             StartCoroutine(SpawnWaveRoutine());
         }
 
         private void StartNextWaveAfterDelay()
         {
+            // Eğer oyun resetleniyorsa eski rutinleri temizle, yenisini başlat
+            StopAllCoroutines();
             StartCoroutine(WaitAndStartWave());
         }
 
@@ -55,35 +69,29 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
         private IEnumerator SpawnWaveRoutine()
         {
-            // 1. Manager'a yeni listeyi hazırlat
             _director.GenerateNextWave(); 
             List<EnemyDefinition> enemiesToSpawn = _director.NextWaveEnemies;
             
-            // Eğer liste boşsa (Hata durumu), kısa bekle ve tekrar dene
             if (enemiesToSpawn.Count == 0)
             {
-                Debug.LogWarning("⚠️ Wave listesi boş geldi! Tekrar deneniyor...");
-                _director.OnWaveWon(); // Wave'i pas geç
+                _director.OnWaveWon(); 
                 yield break;
             }
 
             OnWaveStarted?.Invoke(enemiesToSpawn.Count);
 
-            // 2. Manager'a "Üretime Başladım, sakın oyunu bitirme" de
+            // Manager'a "Üretime Başladım" de
             _director.SetSpawningStatus(true);
 
-            // 3. Tek tek üret
             foreach (EnemyDefinition enemyData in enemiesToSpawn)
             {
                 SpawnEnemy(enemyData);
-
-                // Gecikme süresini al
                 float delay = _director.GetSpawnDelay(enemyData.Category);
                 if (delay > 0) yield return new WaitForSeconds(delay);
             }
 
-            // 4. Üretim bitti, Manager'a "Benim işim bitti, gerisi sende" de
-            Debug.Log("✅ Tüm düşmanlar sahneye sürüldü.");
+            // Spawn bitti.
+            // [ÖNEMLİ] Eğer bu noktaya geldiysek normal bir bitiş olmuştur.
             _director.SetSpawningStatus(false);
         }
 
@@ -100,12 +108,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             if (stats != null) stats.InitializeRuntime(data);
 
             enemy.gameObject.SetActive(true);
-            
-            // [KRİTİK] Düşmanı Manager'a kaydet (Nüfus müdürlüğüne bildir)
             _director.RegisterEnemy(enemy);
         }
         
-        // --- Pool Mantığı (Aynı kaldı) ---
+        // --- Pool & Helper Methods (Aynı) ---
         private EnemyBehaviorController GetFromPool(EnemyDefinition data)
         {
             string key = data.name;
@@ -127,8 +133,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
         private void ReturnEnemyToPool(EnemyBehaviorController enemy)
         {
-            enemy.gameObject.SetActive(false); // Disable olduğunda Manager'dan otomatik düşecek
-
+            enemy.gameObject.SetActive(false);
             var stats = enemy.GetComponent<EnemyStats>();
             if (stats != null && stats.Definition != null)
             {

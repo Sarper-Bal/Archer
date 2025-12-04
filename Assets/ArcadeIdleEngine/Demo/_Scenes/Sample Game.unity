@@ -3451,7 +3451,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4e1fe263f9214fb4b213b4dfbfb31b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Interactables.DestructibleBarrier
-  _maxHealth: 10
+  _maxHealth: 2
   _barrierModel: {fileID: 1931304467}
   _uiCanvas: {fileID: 68585166}
   _fillBar: {fileID: 1498388138}

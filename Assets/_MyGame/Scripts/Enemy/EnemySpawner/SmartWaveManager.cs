@@ -12,16 +12,13 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         [SerializeField] private DirectorConfig _config;
         [SerializeField] private EnemyDatabase _enemyDatabase;
 
-        [Header("Debug - İzleme")]
+        [Header("Debug")]
         [SerializeField] private int _currentWaveNumber = 1;
         [SerializeField] private float _currentTotalBudget;
         [SerializeField] private bool _isSpawningInProgress = false;
-        
-        // [YENİ] Reset işlemi sırasında "Kazandın" kontrolünü engellemek için bayrak
         private bool _isResetting = false; 
         
         private HashSet<EnemyBehaviorController> _activeEnemiesRegistry = new HashSet<EnemyBehaviorController>();
-
         public List<EnemyDefinition> NextWaveEnemies { get; private set; } = new List<EnemyDefinition>();
         private WaveRule _currentRule;
 
@@ -42,20 +39,16 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             _isResetting = false;
         }
 
-        // --- KAYBETME & RESET MANTIĞI (DÜZELTİLDİ) ---
-
+        // --- KAYBETME & RESET ---
         public void TriggerWaveFailure()
         {
-            // Eğer zaten resetleniyorsa veya spawn bitmiş ve düşman yoksa (hatalı çağrı) çık
             if (_isResetting) return;
 
-            Debug.Log("❌ WAVE BAŞARISIZ! Sistem Resetleniyor...");
-
-            // 1. Reset Modunu Aç (Kritik: Bu sayede düşmanlar silinirken 'Kazandın' tetiklenmez)
+            Debug.Log("❌ WAVE BAŞARISIZ! Resetleniyor...");
             _isResetting = true;
             _isSpawningInProgress = false;
 
-            // 2. Düşmanları Temizle
+            // 1. Düşmanları Temizle
             var enemiesToClear = new List<EnemyBehaviorController>(_activeEnemiesRegistry);
             foreach (var enemy in enemiesToClear)
             {
@@ -63,21 +56,16 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
             _activeEnemiesRegistry.Clear();
 
-            // 3. Cezalandır ve Tamir Et
+            // 2. Cezalandır ve Tamir Et
             OnWaveLost();
-            OnGameReset?.Invoke();
+            OnGameReset?.Invoke(); // Kapılar burada tamir olur
 
-            // 4. Reset Modunu Kapat
             _isResetting = false;
-
-            // 5. Spawner'a "Sıradaki Wave'e Hazırlan" De
-            // (Burada ekstra süre beklemiyoruz, Spawner kendi süresini sayacak)
-            Debug.Log("🔄 Wave Tekrarı İçin Sinyal Gönderiliyor...");
+            Debug.Log("🔄 Yeni Wave İsteniyor...");
             OnWaveCompleted?.Invoke();
         }
 
-        // --- DİĞER MANTIKLAR ---
-
+        // --- STANDART MANTIKLAR ---
         public void SetSpawningStatus(bool isInProgress)
         {
             _isSpawningInProgress = isInProgress;
@@ -94,24 +82,14 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             if (_activeEnemiesRegistry.Contains(enemy))
             {
                 _activeEnemiesRegistry.Remove(enemy);
-                
-                // [DÜZELTME] Eğer reset atıyorsak, düşman azaldı diye kontrol yapma
-                if (!_isResetting)
-                {
-                    CheckWaveCompletion();
-                }
+                if (!_isResetting) CheckWaveCompletion();
             }
         }
 
         private void CheckWaveCompletion()
         {
-            // Eğer reset modundaysak asla kazanma kontrolü yapma
             if (_isResetting) return;
-
-            if (!_isSpawningInProgress && _activeEnemiesRegistry.Count == 0)
-            {
-                OnWaveWon();
-            }
+            if (!_isSpawningInProgress && _activeEnemiesRegistry.Count == 0) OnWaveWon();
         }
 
         public float GetSpawnDelay(EnemyCategory category)
@@ -135,9 +113,7 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             _activeEnemiesRegistry.Clear();
             
             _currentRule = _config.GetRuleForWave(_currentWaveNumber);
-            
-            if (_currentRule.Equals(default(WaveRule))) 
-                _currentRule = new WaveRule { SwarmPercent = 100, SwarmInterval = 1.0f };
+            if (_currentRule.Equals(default(WaveRule))) _currentRule = new WaveRule { SwarmPercent = 100, SwarmInterval = 1.0f };
 
             float totalPercent = _currentRule.SwarmPercent + _currentRule.RusherPercent + _currentRule.TankPercent;
             if (totalPercent <= 0) totalPercent = 1;
@@ -146,13 +122,12 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             float rusherBudget = _currentTotalBudget * (_currentRule.RusherPercent / totalPercent);
             float tankBudget = _currentTotalBudget * (_currentRule.TankPercent / totalPercent);
 
-            Debug.Log($"🧮 Dalga {_currentWaveNumber} Hazırlanıyor. Bütçe: {_currentTotalBudget:F0}");
-
             FillBudget(swarmBudget, EnemyCategory.Swarm);
             FillBudget(rusherBudget, EnemyCategory.Rusher);
             FillBudget(tankBudget, EnemyCategory.Tank);
-            
             ShuffleList(NextWaveEnemies);
+            
+            Debug.Log($"🧮 Wave {_currentWaveNumber} Hazırlandı. Bütçe: {_currentTotalBudget:F0}");
         }
 
         private void FillBudget(float budget, EnemyCategory category)
@@ -188,17 +163,19 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             float bonus = _currentTotalBudget * _config.WinGrowthPercentage;
             _currentTotalBudget += bonus;
             _currentWaveNumber++;
+
+            // [KRİTİK EKLEME] Kazanınca da sahneyi tamir et!
+            // Bu sayede yıkılan kapılar bir sonraki tur için ayağa kalkar.
+            OnGameReset?.Invoke();
+
             OnWaveCompleted?.Invoke();
         }
 
         public void OnWaveLost()
         {
-            Debug.Log($"💀 WAVE KAYBEDİLDİ. Bütçe Düşürülüyor.");
             float penalty = _currentTotalBudget * _config.LossPenaltyPercentage;
             _currentTotalBudget -= penalty;
             if (_currentTotalBudget < _config.StartingBudget) _currentTotalBudget = _config.StartingBudget;
-            
-            // [ÖNEMLİ] Wave numarasını düşürmüyoruz, oyuncu aynı seviyeyi (kolaylaşmış halde) tekrar deneyecek.
         }
         
         private IEnumerator FailsafeRoutine()
@@ -207,13 +184,12 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             while (true)
             {
                 yield return wait;
-                // Reset sırasında failsafe çalışmasın
                 if (!_isResetting && !_isSpawningInProgress && _activeEnemiesRegistry.Count > 0)
                 {
                     _activeEnemiesRegistry.RemoveWhere(e => e == null || !e.gameObject.activeInHierarchy);
                     if (_activeEnemiesRegistry.Count == 0)
                     {
-                        Debug.LogWarning("🛡️ Failsafe: Takılan wave temizlendi.");
+                        Debug.LogWarning("🛡️ Failsafe: Temizlik yapıldı.");
                         OnWaveWon();
                     }
                 }
