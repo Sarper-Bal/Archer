@@ -21,7 +21,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         [Header("🎨 Görsel Kontrol")]
         [SerializeField] private BarrierVisualController _visualController;
 
-        // [YENİ REFERANS] Animasyon kontrolcüsünü de yönetmek için
+        // Animasyon kontrolcüsünü de yönetmek için
         private BarrierAnimationController _animController;
 
         private DestructibleBarrier _barrier;
@@ -39,8 +39,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             _waveManager = FindObjectOfType<SmartWaveManager>();
             
             if (_visualController == null) _visualController = GetComponent<BarrierVisualController>();
-            
-            // [YENİ] Animasyon kontrolcüsünü bul
             _animController = GetComponent<BarrierAnimationController>();
         }
 
@@ -124,6 +122,20 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             {
                 _upgradeZone.gameObject.SetActive(false);
             }
+        }
+
+        // [YENİ] TEST İÇİN RESET FONKSİYONU
+        // Inspector'da script ismine sağ tıklayıp çalıştırabilirsin.
+        [ContextMenu("🔄 Reset Barrier Level")]
+        public void ResetBarrierLevel()
+        {
+            CurrentLevelIndex = 0;
+            InitializeBarrierState();
+            
+            // Resetlendiğinde Unlocker'ı da zorla aç (Eğer kapalıysa)
+            if (_upgradeZone != null) _upgradeZone.gameObject.SetActive(true);
+            
+            Debug.Log("🔄 Bariyer Seviyesi 0'a Sıfırlandı.");
         }
     }
 }

@@ -3217,7 +3217,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Spawners.WaveSpawner
   _director: {fileID: 2147244072}
-  _timeBetweenWaves: 5
+  _timeBetweenWaves: 10
   _spawnAreaSize: {x: 3, y: 0, z: 3}
 --- !u!1 &872524373 stripped
 GameObject:
@@ -9270,9 +9270,9 @@ GameObject:
   - component: {fileID: 4898092785113279138}
   - component: {fileID: 4898092785113279140}
   - component: {fileID: 4898092785113279142}
-  - component: {fileID: 4898092785113279141}
   - component: {fileID: 4898092785113279144}
   - component: {fileID: 4898092785113279143}
+  - component: {fileID: 4898092785113279141}
   m_Layer: 0
   m_Name: WoodenGate
   m_TagString: Untagged
@@ -9391,9 +9391,10 @@ MonoBehaviour:
   _levelVariable: {fileID: 11400000, guid: 5f471a0322d004e4c9778ff975634a39, type: 2}
   _upgradeZone: {fileID: 6553746844201796702}
   _healthPerLevel:
-  - 5
+  - 2
+  - 3
   - 4
-  _upgradeCosts: 0a000000
+  _upgradeCosts: 050000000a000000
   _visualController: {fileID: 4898092785113279144}
 --- !u!114 &4898092785113279144
 MonoBehaviour:
@@ -9837,7 +9838,7 @@ Transform:
   m_GameObject: {fileID: 6553746844201796691}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 3.32}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
