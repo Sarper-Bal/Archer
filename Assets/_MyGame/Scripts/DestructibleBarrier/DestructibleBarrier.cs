@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using IndianOceanAssets.Engine2_5D; 
 using IndianOceanAssets.Engine2_5D.Managers; 
-using DG.Tweening;
+using DG.Tweening; 
 
 namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 {
@@ -80,8 +80,20 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void BreakBarrier()
         {
             _isDestroyed = true;
+            
+            // 1. Ölüm haberini yay (Bu, BaseObjectiveController'ı tetikleyip Reset'i başlatabilir)
             OnDeath?.Invoke();
 
+            // [KRİTİK DÜZELTME] Haber verdikten sonra kontrol et:
+            // Eğer OnDeath zinciri sırasında oyun resetlendiyse, ben artık "Destroyed" değilimdir.
+            // O yüzden aşağıdaki kapatma işlemlerini İPTAL ET.
+            if (!_isDestroyed) 
+            {
+                // Debug.Log("🛡️ Yıkılma iptal edildi çünkü reset geldi.");
+                return; 
+            }
+
+            // Eğer reset gelmediyse normal yıkılma işlemine devam et
             if (_barrierModel) _barrierModel.SetActive(false);
             if (_uiCanvas) _uiCanvas.gameObject.SetActive(false);
             if (_destructionParticles) _destructionParticles.Play();
@@ -94,34 +106,36 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         }
 
         private void ResetBarrier()
-{
-    _currentHealth = _maxHealth;
-    _isDestroyed = false;
+        {
+            _currentHealth = _maxHealth;
+            
+            // [ÖNEMLİ] Burası false yapıldığı için yukarıdaki BreakBarrier duracak
+            _isDestroyed = false; 
 
-    if (_barrierModel) 
-    {
-        _barrierModel.SetActive(true);
-        // [EKLEME] Modelin transformunu da sıfırla (AnimationController yapamzsa diye yedek)
-        // _barrierModel.transform.localScale = Vector3.one; // (Gerekirse bu yorumu aç)
-    }
+            // 1. Görselleri Aç ve Düzelt
+            if (_barrierModel) 
+            {
+                _barrierModel.SetActive(true);
+                _barrierModel.transform.DOKill(); 
+                _barrierModel.transform.localScale = Vector3.one; 
+            }
 
-    if (_uiCanvas) 
-    {
-        _uiCanvas.gameObject.SetActive(true);
-        // [EKLEME] Canvas boyutunu zorla düzelt. DOTween bazen burayı da bozabilir.
-        _uiCanvas.transform.localScale = Vector3.one; 
-    }
-    
-    var navObstacle = GetComponent<UnityEngine.AI.NavMeshObstacle>();
-    if (navObstacle) navObstacle.enabled = true;
+            if (_uiCanvas) 
+            {
+                _uiCanvas.gameObject.SetActive(true);
+                _uiCanvas.transform.DOKill();
+                _uiCanvas.transform.localScale = Vector3.one;
+            }
+            
+            var navObstacle = GetComponent<UnityEngine.AI.NavMeshObstacle>();
+            if (navObstacle) navObstacle.enabled = true;
 
-    var col = GetComponent<Collider>();
-    if (col) col.enabled = true;
+            var col = GetComponent<Collider>();
+            if (col) col.enabled = true;
 
-    UpdateUI();
-    
-    Debug.Log($"♻️ {gameObject.name}: Tamir edildi ve görseller resetlendi.");
-}
+            UpdateUI();
+        }
+
         private void UpdateUI()
         {
             if (_healthText != null) _healthText.text = Mathf.Max(0, _currentHealth).ToString("F0");
