@@ -22,8 +22,10 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         public List<EnemyDefinition> NextWaveEnemies { get; private set; } = new List<EnemyDefinition>();
         private WaveRule _currentRule;
 
-        public event System.Action OnWaveCompleted; 
-        public event System.Action OnGameReset;     
+        // --- EVENTLER (Eksik olan eklendi) ---
+        public event System.Action OnWaveStarted;   // [YENİ] Savaş başladı sinyali
+        public event System.Action OnWaveCompleted; // Savaş bitti (Kazanma)
+        public event System.Action OnGameReset;     // Oyun resetlendi (Kaybetme/Tamir)
 
         private void Start()
         {
@@ -39,6 +41,12 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             _isResetting = false;
         }
 
+        // --- YENİ: Spawner bu fonksiyonu çağırarak savaşı başlattığını haber verir ---
+        public void NotifyWaveStarted()
+        {
+            OnWaveStarted?.Invoke();
+        }
+
         // --- KAYBETME & RESET ---
         public void TriggerWaveFailure()
         {
@@ -48,7 +56,6 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             _isResetting = true;
             _isSpawningInProgress = false;
 
-            // 1. Düşmanları Temizle
             var enemiesToClear = new List<EnemyBehaviorController>(_activeEnemiesRegistry);
             foreach (var enemy in enemiesToClear)
             {
@@ -56,9 +63,8 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
             _activeEnemiesRegistry.Clear();
 
-            // 2. Cezalandır ve Tamir Et
             OnWaveLost();
-            OnGameReset?.Invoke(); // Kapılar burada tamir olur
+            OnGameReset?.Invoke(); // Kapılar ve Upgrade kutuları burada resetlenir
 
             _isResetting = false;
             Debug.Log("🔄 Yeni Wave İsteniyor...");
@@ -164,10 +170,7 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             _currentTotalBudget += bonus;
             _currentWaveNumber++;
 
-            // [KRİTİK EKLEME] Kazanınca da sahneyi tamir et!
-            // Bu sayede yıkılan kapılar bir sonraki tur için ayağa kalkar.
-            OnGameReset?.Invoke();
-
+            OnGameReset?.Invoke(); // Kazanılınca da yapıları tamir et
             OnWaveCompleted?.Invoke();
         }
 

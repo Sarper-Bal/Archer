@@ -17,7 +17,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
         
         private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
-
         public System.Action<int> OnWaveStarted; 
 
         private void Start()
@@ -25,9 +24,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             if (_director != null)
             {
                 _director.OnWaveCompleted += StartNextWaveAfterDelay;
-                // [DÜZELTME] Reset durumunda spawner'ı durdurmak için abone ol
                 _director.OnGameReset += StopAndResetSpawner;
-                
                 StartCoroutine(StartFirstWaveRoutine());
             }
         }
@@ -41,10 +38,9 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             }
         }
 
-        // [YENİ] ACİL DURDURMA BUTONU
         private void StopAndResetSpawner()
         {
-            StopAllCoroutines(); // O anki spawn işlemini bıçak gibi kes
+            StopAllCoroutines(); 
             Debug.Log("🛑 Spawner: Reset sinyali alındı, üretim iptal edildi.");
         }
 
@@ -56,7 +52,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
         private void StartNextWaveAfterDelay()
         {
-            // Eğer oyun resetleniyorsa eski rutinleri temizle, yenisini başlat
             StopAllCoroutines();
             StartCoroutine(WaitAndStartWave());
         }
@@ -80,7 +75,8 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
             OnWaveStarted?.Invoke(enemiesToSpawn.Count);
 
-            // Manager'a "Üretime Başladım" de
+            // [DÜZELTME] Manager'a "Savaş Başladı" haberini ver (Upgrade kutuları kapansın)
+            _director.NotifyWaveStarted();
             _director.SetSpawningStatus(true);
 
             foreach (EnemyDefinition enemyData in enemiesToSpawn)
@@ -90,8 +86,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
                 if (delay > 0) yield return new WaitForSeconds(delay);
             }
 
-            // Spawn bitti.
-            // [ÖNEMLİ] Eğer bu noktaya geldiysek normal bir bitiş olmuştur.
             _director.SetSpawningStatus(false);
         }
 
@@ -111,7 +105,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             _director.RegisterEnemy(enemy);
         }
         
-        // --- Pool & Helper Methods (Aynı) ---
         private EnemyBehaviorController GetFromPool(EnemyDefinition data)
         {
             string key = data.name;
