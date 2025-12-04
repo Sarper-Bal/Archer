@@ -13,7 +13,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         [SerializeField] private float _maxHealth = 1000f;
 
         [Header("Görsel Parçalar")]
-        [SerializeField] private GameObject _barrierModel; 
+        [SerializeField] private GameObject _barrierModel; // Bu değişken artık dinamik değişecek
         [SerializeField] private Canvas _uiCanvas;         
         [SerializeField] private Image _fillBar;           
         [SerializeField] private TextMeshProUGUI _healthText; 
@@ -25,7 +25,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private bool _isDestroyed = false;
         private SmartWaveManager _waveManager; 
 
-        // [YENİ] Orijinal Boyutları Saklamak İçin
         private Vector3 _originalModelScale;
         private Vector3 _originalCanvasScale;
 
@@ -39,10 +38,22 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void Awake()
         {
             _waveManager = FindObjectOfType<SmartWaveManager>();
-
-            // [KRİTİK] Oyun başlar başlamaz, senin ayarladığın boyutu hafızaya al
+            
+            // Başlangıç referanslarını kaydet
             if (_barrierModel != null) _originalModelScale = _barrierModel.transform.localScale;
             if (_uiCanvas != null) _originalCanvasScale = _uiCanvas.transform.localScale;
+        }
+
+        // [YENİ FONKSİYON] Upgrade Manager bunu çağırıp yeni modeli atayacak
+        public void UpdateVisualModel(GameObject newModel)
+        {
+            if (newModel == null) return;
+
+            _barrierModel = newModel;
+            _originalModelScale = newModel.transform.localScale; // Yeni modelin boyutunu öğren
+            
+            // Yeni modelin aktif olduğundan emin ol
+            _barrierModel.SetActive(!_isDestroyed); 
         }
 
         private void Start()
@@ -54,8 +65,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
                 _waveManager.OnGameReset += ResetBarrier;
             }
             
-            // ResetBarrier yerine, ilk başlangıçta sadece değerleri sıfırla
-            // (Çünkü ResetBarrier boyutu değiştirebilir, Start'ta buna gerek yok)
             _currentHealth = _maxHealth;
             UpdateUI();
         }
@@ -97,7 +106,9 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 
             if (!_isDestroyed) return; 
 
+            // Artık güncel _barrierModel'i kapatacak
             if (_barrierModel) _barrierModel.SetActive(false);
+            
             if (_uiCanvas) _uiCanvas.gameObject.SetActive(false);
             if (_destructionParticles) _destructionParticles.Play();
 
@@ -113,22 +124,17 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             _currentHealth = _maxHealth;
             _isDestroyed = false;
 
-            // 1. Modeli Aç ve Orijinal Boyutuna Getir
             if (_barrierModel) 
             {
                 _barrierModel.SetActive(true);
                 _barrierModel.transform.DOKill(); 
-                
-                // [DÜZELTME] Vector3.one yerine orijinal scale kullan
                 _barrierModel.transform.localScale = _originalModelScale; 
             }
 
-            // 2. UI'ı Aç ve Orijinal Boyutuna Getir
             if (_uiCanvas) 
             {
                 _uiCanvas.gameObject.SetActive(true);
                 _uiCanvas.transform.DOKill();
-                // [DÜZELTME] Vector3.one yerine orijinal scale kullan
                 _uiCanvas.transform.localScale = _originalCanvasScale;
             }
             
@@ -139,8 +145,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             if (col) col.enabled = true;
 
             UpdateUI();
-            
-            Debug.Log($"♻️ {gameObject.name}: Orijinal boyutlarıyla ({_originalModelScale}) tamir edildi.");
         }
 
         private void UpdateUI()

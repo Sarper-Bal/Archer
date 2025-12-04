@@ -3,13 +3,7 @@ using DG.Tweening;
 
 namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 {
-    public enum BarrierAnimMode
-    {
-        None,           
-        PunchScale,     
-        ShakeRotation,  
-        ElasticJelly    
-    }
+    public enum BarrierAnimMode { None, PunchScale, ShakeRotation, ElasticJelly }
 
     [RequireComponent(typeof(DestructibleBarrier))]
     public class BarrierAnimationController : MonoBehaviour
@@ -18,17 +12,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         [SerializeField] private BarrierAnimMode _mode = BarrierAnimMode.PunchScale;
 
         [Header("🎯 Hedef")]
-        [SerializeField] private Transform _visualModel;
+        [SerializeField] private Transform _visualModel; // Dinamik değişecek
 
         [Header("Ayarlar")]
         [SerializeField] private Vector3 _punchStrength = new Vector3(0.1f, 0.1f, 0.1f);
         [SerializeField] private float _punchDuration = 0.15f;
         [SerializeField] private int _punchVibrato = 10;
-        
         [SerializeField] private Vector3 _shakeStrength = new Vector3(0f, 0f, 5f);
         [SerializeField] private float _shakeDuration = 0.2f;
         [SerializeField] private int _shakeVibrato = 10;
-
         [SerializeField] private Vector3 _jellyStrength = new Vector3(0.1f, -0.1f, 0.1f);
         [SerializeField] private float _jellyDuration = 0.4f;
 
@@ -42,7 +34,21 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void Awake()
         {
             _barrier = GetComponent<DestructibleBarrier>();
-            // Awake anındaki boyutu "Kutsal Boyut" olarak kabul et
+            InitializeBaseline();
+        }
+
+        // [YENİ FONKSİYON] Upgrade Manager bunu çağıracak
+        public void UpdateVisualTarget(Transform newTarget)
+        {
+            if (newTarget == null) return;
+
+            // Eski modeldeki animasyonları temizle
+            if (_visualModel != null) _visualModel.DOKill();
+
+            _visualModel = newTarget;
+            
+            // Yeni modelin orijinal boyutunu öğren (Resetlenmesi için)
+            _initialized = false; 
             InitializeBaseline();
         }
 
@@ -55,9 +61,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void OnDisable()
         {
             if (_barrier != null) _barrier.OnDamageTaken -= PlayHitAnimation;
-            
             if (_visualModel != null) _visualModel.DOKill(); 
-            
             ForceResetVisuals();
         }
 
@@ -67,6 +71,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             {
                 _baseScale = _visualModel.localScale;
                 _baseRotation = _visualModel.localRotation;
+                if (_baseScale.sqrMagnitude < 0.001f) _baseScale = Vector3.one;
                 _initialized = true;
             }
         }
@@ -85,14 +90,11 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
                 case BarrierAnimMode.PunchScale:
                     _currentTween = _visualModel.DOPunchScale(_punchStrength, _punchDuration, _punchVibrato, 1f);
                     break;
-
                 case BarrierAnimMode.ShakeRotation:
                     _currentTween = _visualModel.DOShakeRotation(_shakeDuration, _shakeStrength, _shakeVibrato, 90f);
                     break;
-
                 case BarrierAnimMode.ElasticJelly:
-                    _currentTween = _visualModel.DOPunchScale(_jellyStrength, _jellyDuration, 4, 0.5f)
-                        .SetEase(Ease.OutElastic); 
+                    _currentTween = _visualModel.DOPunchScale(_jellyStrength, _jellyDuration, 4, 0.5f).SetEase(Ease.OutElastic); 
                     break;
             }
         }
@@ -102,10 +104,8 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             if (_visualModel != null)
             {
                 _visualModel.DOKill();
-
                 if (_initialized)
                 {
-                    // [DÜZELTME] Asla Vector3.one kullanma, kaydettiğin boyutu kullan
                     _visualModel.localScale = _baseScale;
                     _visualModel.localRotation = _baseRotation;
                 }

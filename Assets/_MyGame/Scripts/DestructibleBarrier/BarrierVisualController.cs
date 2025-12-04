@@ -3,9 +3,6 @@ using System.Collections.Generic;
 
 namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 {
-    /// <summary>
-    /// Bariyer seviyesine göre ilgili 3D modeli açar/kapatır.
-    /// </summary>
     public class BarrierVisualController : MonoBehaviour
     {
         [Header("🎨 Görsel Listesi")]
@@ -13,14 +10,14 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         [SerializeField] private List<GameObject> _levelModels;
 
         /// <summary>
-        /// İstenen seviyenin modelini açar, diğerlerini kapatır.
+        /// İstenen seviyenin modelini açar ve O MODELİ GERİ DÖNDÜRÜR.
         /// </summary>
-        public void UpdateVisuals(int levelIndex)
+        public GameObject UpdateVisuals(int levelIndex)
         {
-            if (_levelModels == null || _levelModels.Count == 0) return;
+            if (_levelModels == null || _levelModels.Count == 0) return null;
 
-            // Seviye, model sayısını aşarsa son modeli kullan (Clamp)
             int visualIndex = Mathf.Clamp(levelIndex, 0, _levelModels.Count - 1);
+            GameObject activeModel = null;
 
             for (int i = 0; i < _levelModels.Count; i++)
             {
@@ -29,12 +26,12 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
                 bool shouldBeActive = (i == visualIndex);
                 
                 if (_levelModels[i].activeSelf != shouldBeActive)
-                {
                     _levelModels[i].SetActive(shouldBeActive);
-                }
+
+                if (shouldBeActive) activeModel = _levelModels[i];
             }
             
-            // Debug.Log($"🎨 Bariyer görseli güncellendi. Index: {visualIndex}");
+            return activeModel; // [YENİ] Aktif olan objeyi paketle gönder
         }
     }
 }

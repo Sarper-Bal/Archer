@@ -21,6 +21,9 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         [Header("🎨 Görsel Kontrol")]
         [SerializeField] private BarrierVisualController _visualController;
 
+        // [YENİ REFERANS] Animasyon kontrolcüsünü de yönetmek için
+        private BarrierAnimationController _animController;
+
         private DestructibleBarrier _barrier;
         private SmartWaveManager _waveManager;
         
@@ -34,17 +37,18 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         {
             _barrier = GetComponent<DestructibleBarrier>();
             _waveManager = FindObjectOfType<SmartWaveManager>();
+            
             if (_visualController == null) _visualController = GetComponent<BarrierVisualController>();
+            
+            // [YENİ] Animasyon kontrolcüsünü bul
+            _animController = GetComponent<BarrierAnimationController>();
         }
 
         private void Start()
         {
             if (_waveManager != null)
             {
-                // Savaş Başlayınca -> Kutuyu GİZLE
                 _waveManager.OnWaveStarted += HideUnlocker;
-                
-                // Savaş Bitince (Kazanma veya Kaybetme/Reset) -> Kutuyu AÇ (Durumu kontrol et)
                 _waveManager.OnWaveCompleted += RefreshUnlockerState;
                 _waveManager.OnGameReset += RefreshUnlockerState;
             }
@@ -78,9 +82,23 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 
         private void UpdateBarrierStats()
         {
-            if (_visualController) _visualController.UpdateVisuals(CurrentLevelIndex);
+            // 1. Görseli Değiştir ve Yeni Objeyi Al
+            GameObject activeModel = null;
+            if (_visualController) 
+            {
+                activeModel = _visualController.UpdateVisuals(CurrentLevelIndex);
+            }
 
-            // Canı güncelle ve fulle
+            // 2. Yeni Modeli Diğer Scriptlere Tanıt (Referans Kopukluğunu Çözer)
+            if (activeModel != null)
+            {
+                _barrier.UpdateVisualModel(activeModel); // Bariyer artık bunu yok edecek
+                
+                if (_animController) 
+                    _animController.UpdateVisualTarget(activeModel.transform); // Animasyon artık bunu sallayacak
+            }
+
+            // 3. Canı Güncelle
             if (CurrentLevelIndex < _healthPerLevel.Count)
             {
                 float newMax = _healthPerLevel[CurrentLevelIndex];
@@ -97,7 +115,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         {
             if (_upgradeZone == null) return;
 
-            // Max level değilse ve savaş yoksa (Event ile çağrıldıysa zaten savaş bitmiştir)
             if (CurrentLevelIndex < _upgradeCosts.Count)
             {
                 _upgradeZone.SetRequiredResource(_upgradeCosts[CurrentLevelIndex]);
