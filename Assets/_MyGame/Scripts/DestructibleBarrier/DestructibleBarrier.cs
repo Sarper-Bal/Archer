@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using IndianOceanAssets.Engine2_5D; 
+using IndianOceanAssets.Engine2_5D.Managers; // SmartWaveManager'a erişim için
+using DG.Tweening;
 
 namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 {
@@ -21,19 +23,35 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         
         private float _currentHealth;
         private bool _isDestroyed = false;
+        private SmartWaveManager _waveManager; // [YENİ] Manager Referansı
 
         public bool IsDead => _isDestroyed;
         public float CurrentHealth => _currentHealth;
 
-        // --- EVENT SİSTEMİ ---
-        // Animasyon scripti burayı dinleyecek
         public event System.Action<float> OnHealthChanged;
         public event System.Action OnDeath;
         public event System.Action OnDamageTaken;
 
+        private void Awake()
+        {
+            // [YENİ] Sahnedeki Manager'ı bul
+            _waveManager = FindObjectOfType<SmartWaveManager>();
+        }
+
         private void OnEnable()
         {
             ResetBarrier();
+            
+            // [YENİ] Reset olayına abone ol
+            if (_waveManager != null)
+                _waveManager.OnGameReset += ResetBarrier;
+        }
+
+        private void OnDisable()
+        {
+            // [YENİ] Abonelikten çık (Memory Leak önlemi)
+            if (_waveManager != null)
+                _waveManager.OnGameReset -= ResetBarrier;
         }
 
         public void InitializeHealth(float maxHealth, DeathEffectPool deathPool) 
@@ -47,11 +65,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             if (_isDestroyed) return;
 
             _currentHealth -= amount;
-            
-            // 1. Olayı Tetikle (Animasyon scripti bunu duyacak)
             OnDamageTaken?.Invoke();
-            
-            // 2. UI Güncelle (Sadece metin/bar, animasyon yok)
             UpdateUI();
 
             if (_currentHealth <= 0)
@@ -61,12 +75,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         }
 
         public void Heal(float amount) { } 
+
+        // [GÜNCELLEME] Bu fonksiyon artık public değilse de Interface gereği public kalmalı
+        // Ama asıl çağrıyı Event üzerinden alıyor.
         public void ResetHealth() => ResetBarrier();
 
         private void BreakBarrier()
         {
             _isDestroyed = true;
-            OnDeath?.Invoke();
+            OnDeath?.Invoke(); // BaseObjectiveController burayı dinleyecek
 
             if (_barrierModel) _barrierModel.SetActive(false);
             if (_uiCanvas) _uiCanvas.gameObject.SetActive(false);

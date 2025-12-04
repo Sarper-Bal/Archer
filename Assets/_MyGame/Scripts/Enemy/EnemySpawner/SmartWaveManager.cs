@@ -1,7 +1,8 @@
 using UnityEngine;
+using System.Collections; 
 using System.Collections.Generic;
-using IndianOceanAssets.Engine2_5D.Data; // EnemyDefinition ve Config için
-using IndianOceanAssets.Engine2_5D;      // EnemyBehaviorController için
+using IndianOceanAssets.Engine2_5D.Data;
+using IndianOceanAssets.Engine2_5D;
 
 namespace IndianOceanAssets.Engine2_5D.Managers
 {
@@ -11,83 +12,107 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         [SerializeField] private DirectorConfig _config;
         [SerializeField] private EnemyDatabase _enemyDatabase;
 
-        [Header("Debug - İzleme (Salt Okunur)")]
-        [Tooltip("Oyuncunun şu an oynadığı seviye. Sadece kazandıkça artar.")]
-        [SerializeField] private int _currentWaveNumber = 1; 
-        
-        [Tooltip("Şu anki düşman satın alma bütçesi.")]
+        [Header("Debug - İzleme")]
+        [SerializeField] private int _currentWaveNumber = 1;
         [SerializeField] private float _currentTotalBudget;
+        [SerializeField] private bool _isSpawningInProgress = false;
         
-        [SerializeField] private bool _isSpawningInProgress = false; // Spawner hala çalışıyor mu?
+        // [YENİ] Reset işlemi sırasında "Kazandın" kontrolünü engellemek için bayrak
+        private bool _isResetting = false; 
         
-        // HashSet: Liste gibi ama araması ve silmesi çok daha hızlıdır (O(1)).
         private HashSet<EnemyBehaviorController> _activeEnemiesRegistry = new HashSet<EnemyBehaviorController>();
 
-        // Spawner'ın okuyacağı liste
         public List<EnemyDefinition> NextWaveEnemies { get; private set; } = new List<EnemyDefinition>();
-        
-        // Aktif kuralı sakla (SwarmInterval vs. için)
         private WaveRule _currentRule;
 
-        // [EVENT] WaveSpawner veya UI burayı dinleyebilir
-        public System.Action OnWaveCompleted; 
+        public event System.Action OnWaveCompleted; 
+        public event System.Action OnGameReset;     
 
-        // --- PUBLIC API (Spawner ve Düşmanlar Burayı Kullanacak) ---
+        private void Start()
+        {
+            InitializeGame();
+            StartCoroutine(FailsafeRoutine());
+        }
 
         public void InitializeGame()
         {
             if (_config != null) _currentTotalBudget = _config.StartingBudget;
             _currentWaveNumber = 1;
             _activeEnemiesRegistry.Clear();
+            _isResetting = false;
         }
 
-        /// <summary>
-        /// Spawner, üretime başladığında bunu TRUE, bitirdiğinde FALSE yapar.
-        /// </summary>
+        // --- KAYBETME & RESET MANTIĞI (DÜZELTİLDİ) ---
+
+        public void TriggerWaveFailure()
+        {
+            // Eğer zaten resetleniyorsa veya spawn bitmiş ve düşman yoksa (hatalı çağrı) çık
+            if (_isResetting) return;
+
+            Debug.Log("❌ WAVE BAŞARISIZ! Sistem Resetleniyor...");
+
+            // 1. Reset Modunu Aç (Kritik: Bu sayede düşmanlar silinirken 'Kazandın' tetiklenmez)
+            _isResetting = true;
+            _isSpawningInProgress = false;
+
+            // 2. Düşmanları Temizle
+            var enemiesToClear = new List<EnemyBehaviorController>(_activeEnemiesRegistry);
+            foreach (var enemy in enemiesToClear)
+            {
+                if (enemy != null) enemy.gameObject.SetActive(false); 
+            }
+            _activeEnemiesRegistry.Clear();
+
+            // 3. Cezalandır ve Tamir Et
+            OnWaveLost();
+            OnGameReset?.Invoke();
+
+            // 4. Reset Modunu Kapat
+            _isResetting = false;
+
+            // 5. Spawner'a "Sıradaki Wave'e Hazırlan" De
+            // (Burada ekstra süre beklemiyoruz, Spawner kendi süresini sayacak)
+            Debug.Log("🔄 Wave Tekrarı İçin Sinyal Gönderiliyor...");
+            OnWaveCompleted?.Invoke();
+        }
+
+        // --- DİĞER MANTIKLAR ---
+
         public void SetSpawningStatus(bool isInProgress)
         {
             _isSpawningInProgress = isInProgress;
-            
-            // Eğer spawn bittiği an hiç düşman yoksa (bug veya boş wave), turu bitir.
-            if (!isInProgress && _activeEnemiesRegistry.Count == 0)
-            {
-                OnWaveWon();
-            }
+            CheckWaveCompletion();
         }
 
-        /// <summary>
-        /// Düşman sahneye çıktığında (OnEnable) kendini buraya kaydettirir.
-        /// </summary>
         public void RegisterEnemy(EnemyBehaviorController enemy)
         {
-            if (!_activeEnemiesRegistry.Contains(enemy))
-            {
-                _activeEnemiesRegistry.Add(enemy);
-            }
+            if (!_activeEnemiesRegistry.Contains(enemy)) _activeEnemiesRegistry.Add(enemy);
         }
 
-        /// <summary>
-        /// Düşman öldüğünde veya havuza döndüğünde (OnDisable) kaydını sildirir.
-        /// </summary>
         public void UnregisterEnemy(EnemyBehaviorController enemy)
         {
             if (_activeEnemiesRegistry.Contains(enemy))
             {
                 _activeEnemiesRegistry.Remove(enemy);
-                CheckWaveCompletion();
+                
+                // [DÜZELTME] Eğer reset atıyorsak, düşman azaldı diye kontrol yapma
+                if (!_isResetting)
+                {
+                    CheckWaveCompletion();
+                }
             }
         }
 
         private void CheckWaveCompletion()
         {
-            // Eğer spawn işlemi bittiyse VE sahnede kayıtlı düşman kalmadıysa -> KAZANDIN
+            // Eğer reset modundaysak asla kazanma kontrolü yapma
+            if (_isResetting) return;
+
             if (!_isSpawningInProgress && _activeEnemiesRegistry.Count == 0)
             {
                 OnWaveWon();
             }
         }
-
-        // --- SPAWNER SORGULARI (Yeni Kural Sistemine Göre) ---
 
         public float GetSpawnDelay(EnemyCategory category)
         {
@@ -102,27 +127,18 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
         }
 
-        // --- DALGA OLUŞTURMA (GENERATE) ---
-
         public void GenerateNextWave()
         {
             if (_config == null || _enemyDatabase == null) return;
 
             NextWaveEnemies.Clear();
-            _activeEnemiesRegistry.Clear(); // Yeni dalga için temizlik
+            _activeEnemiesRegistry.Clear();
             
-            // [DEĞİŞİKLİK] Artık MinWinWave'e göre kural seçiyor.
-            // _currentWaveNumber sadece kazandıkça arttığı için, oyuncu kaybederse
-            // aynı kural (veya bir önceki kural) geçerli olmaya devam eder.
             _currentRule = _config.GetRuleForWave(_currentWaveNumber);
             
             if (_currentRule.Equals(default(WaveRule))) 
-            {
-                // Eğer hiç kural yoksa varsayılan basit bir kural oluştur
                 _currentRule = new WaveRule { SwarmPercent = 100, SwarmInterval = 1.0f };
-            }
 
-            // Dağılım Hesapla
             float totalPercent = _currentRule.SwarmPercent + _currentRule.RusherPercent + _currentRule.TankPercent;
             if (totalPercent <= 0) totalPercent = 1;
 
@@ -130,14 +146,12 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             float rusherBudget = _currentTotalBudget * (_currentRule.RusherPercent / totalPercent);
             float tankBudget = _currentTotalBudget * (_currentRule.TankPercent / totalPercent);
 
-            Debug.Log($"🧮 Dalga {_currentWaveNumber} (MinWinWave: {_currentRule.MinWinWave}) Hazırlanıyor. Bütçe: {_currentTotalBudget:F0}");
+            Debug.Log($"🧮 Dalga {_currentWaveNumber} Hazırlanıyor. Bütçe: {_currentTotalBudget:F0}");
 
-            // Alışveriş Yap
             FillBudget(swarmBudget, EnemyCategory.Swarm);
             FillBudget(rusherBudget, EnemyCategory.Rusher);
             FillBudget(tankBudget, EnemyCategory.Tank);
             
-            // Listeyi Karıştır (Shuffle)
             ShuffleList(NextWaveEnemies);
         }
 
@@ -152,12 +166,11 @@ namespace IndianOceanAssets.Engine2_5D.Managers
                     NextWaveEnemies.Add(enemy);
                     budget -= enemy.ThreatScore;
                 }
-                else break; // Bu bütçeye uygun düşman kalmadı
+                else break;
                 safety++;
             }
         }
         
-        // Fisher-Yates Shuffle
         private void ShuffleList<T>(List<T> list)
         {
             int n = list.Count;
@@ -171,54 +184,36 @@ namespace IndianOceanAssets.Engine2_5D.Managers
 
         public void OnWaveWon()
         {
-            Debug.Log($"🎉 WAVE {_currentWaveNumber} TAMAMLANDI! Bütçe Artıyor.");
-            
+            Debug.Log($"🎉 WAVE {_currentWaveNumber} KAZANILDI!");
             float bonus = _currentTotalBudget * _config.WinGrowthPercentage;
             _currentTotalBudget += bonus;
-            
-            // [ÖNEMLİ] Seviye sadece burada artar. Kaybederse artmaz.
             _currentWaveNumber++;
-            
             OnWaveCompleted?.Invoke();
         }
 
         public void OnWaveLost()
         {
-            Debug.Log($"💀 WAVE {_currentWaveNumber} KAYBEDİLDİ. Bütçe Azalıyor.");
-
+            Debug.Log($"💀 WAVE KAYBEDİLDİ. Bütçe Düşürülüyor.");
             float penalty = _currentTotalBudget * _config.LossPenaltyPercentage;
             _currentTotalBudget -= penalty;
+            if (_currentTotalBudget < _config.StartingBudget) _currentTotalBudget = _config.StartingBudget;
             
-            if (_currentTotalBudget < _config.StartingBudget) 
-                _currentTotalBudget = _config.StartingBudget;
-                
-            // Not: _currentWaveNumber'ı artırmıyoruz! Oyuncu aynı seviyeyi tekrar deneyecek.
+            // [ÖNEMLİ] Wave numarasını düşürmüyoruz, oyuncu aynı seviyeyi (kolaylaşmış halde) tekrar deneyecek.
         }
         
-        // --- FAILSAFE (GÜVENLİK SİGORTASI) ---
-        private void Start()
-        {
-            InitializeGame();
-            StartCoroutine(FailsafeRoutine());
-        }
-
-        private System.Collections.IEnumerator FailsafeRoutine()
+        private IEnumerator FailsafeRoutine()
         {
             var wait = new WaitForSeconds(5f);
             while (true)
             {
                 yield return wait;
-                
-                // Eğer spawn bitti görünüyorsa ama sistemde hala adam var görünüyorsa...
-                if (!_isSpawningInProgress && _activeEnemiesRegistry.Count > 0)
+                // Reset sırasında failsafe çalışmasın
+                if (!_isResetting && !_isSpawningInProgress && _activeEnemiesRegistry.Count > 0)
                 {
-                    // Ölmüş veya yok olmuş objeleri temizle
                     _activeEnemiesRegistry.RemoveWhere(e => e == null || !e.gameObject.activeInHierarchy);
-                    
-                    // Temizlik sonrası kimse kalmadıysa bitir
                     if (_activeEnemiesRegistry.Count == 0)
                     {
-                        Debug.LogWarning("🛡️ Failsafe: Takılan wave zorla bitirildi.");
+                        Debug.LogWarning("🛡️ Failsafe: Takılan wave temizlendi.");
                         OnWaveWon();
                     }
                 }
