@@ -1,5 +1,5 @@
 using UnityEngine;
-using DG.Tweening; // DOTween Kütüphanesi
+using DG.Tweening; 
 
 namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 {
@@ -18,7 +18,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         [SerializeField] private BarrierAnimMode _mode = BarrierAnimMode.PunchScale;
 
         [Header("🎯 Hedef")]
-        [Tooltip("Sallanacak olan görsel 3D obje.")]
         [SerializeField] private Transform _visualModel;
 
         [Header("Ayarlar")]
@@ -43,43 +42,21 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void Awake()
         {
             _barrier = GetComponent<DestructibleBarrier>();
-            // Awake'te hemen kaydet ki Start gecikirse veri kaybolmasın
+            // Awake anındaki boyutu "Kutsal Boyut" olarak kabul et
             InitializeBaseline();
-        }
-
-        private void Start()
-        {
-            // Start'ta tekrar kontrol et (Spawner sonradan boyut değiştirmiş olabilir)
-            if (_visualModel != null)
-            {
-                // Eğer Awake'te aldığımız scale 0 ise (Hata), şimdi tekrar al
-                if (_baseScale.sqrMagnitude < 0.001f)
-                {
-                    _baseScale = _visualModel.localScale;
-                    _baseRotation = _visualModel.localRotation;
-                }
-            }
         }
 
         private void OnEnable()
         {
-            if (_barrier != null)
-                _barrier.OnDamageTaken += PlayHitAnimation;
-            
-            // [KRİTİK DÜZELTME] Obje açılır açılmaz DOTween kalıntılarını temizle ve boyutu düzelt
+            if (_barrier != null) _barrier.OnDamageTaken += PlayHitAnimation;
             ForceResetVisuals();
         }
 
         private void OnDisable()
         {
-            if (_barrier != null)
-                _barrier.OnDamageTaken -= PlayHitAnimation;
+            if (_barrier != null) _barrier.OnDamageTaken -= PlayHitAnimation;
             
-            // [DOTWEEN HATASI ÇÖZÜMÜ] Kapanırken tween'i nazikçe değil, sertçe öldür.
-            if (_visualModel != null)
-            {
-                _visualModel.DOKill(); // Bu objeye bağlı tüm tweenleri siler
-            }
+            if (_visualModel != null) _visualModel.DOKill(); 
             
             ForceResetVisuals();
         }
@@ -90,10 +67,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             {
                 _baseScale = _visualModel.localScale;
                 _baseRotation = _visualModel.localRotation;
-
-                // Eğer şans eseri 0 yakaladıysak, 1 olarak düzelt (Güvenlik)
-                if (_baseScale.sqrMagnitude < 0.001f) _baseScale = Vector3.one;
-
                 _initialized = true;
             }
         }
@@ -103,12 +76,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             if (_visualModel == null || _mode == BarrierAnimMode.None) return;
             if (!_initialized) InitializeBaseline();
 
-            // Önceki animasyonu öldür ve objeyi temizle
-            _visualModel.DOKill(true); // true = Complete etmeden direkt öldür
+            _visualModel.DOKill(true); 
             _visualModel.localScale = _baseScale;
             _visualModel.localRotation = _baseRotation;
 
-            // Yeni animasyonu başlat
             switch (_mode)
             {
                 case BarrierAnimMode.PunchScale:
@@ -130,19 +101,13 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         {
             if (_visualModel != null)
             {
-                // Tween kalıntısı varsa sil
                 _visualModel.DOKill();
 
-                // Scale 0 sorununu çözmek için orijinal boyuta zorla
-                if (_initialized && _baseScale.sqrMagnitude > 0.001f)
+                if (_initialized)
                 {
+                    // [DÜZELTME] Asla Vector3.one kullanma, kaydettiğin boyutu kullan
                     _visualModel.localScale = _baseScale;
                     _visualModel.localRotation = _baseRotation;
-                }
-                else
-                {
-                    // Eğer data yoksa en azından görünür yap (1,1,1)
-                    _visualModel.localScale = Vector3.one;
                 }
             }
         }

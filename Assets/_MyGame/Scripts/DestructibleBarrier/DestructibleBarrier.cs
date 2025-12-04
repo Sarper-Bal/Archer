@@ -25,6 +25,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private bool _isDestroyed = false;
         private SmartWaveManager _waveManager; 
 
+        // [YENİ] Orijinal Boyutları Saklamak İçin
+        private Vector3 _originalModelScale;
+        private Vector3 _originalCanvasScale;
+
         public bool IsDead => _isDestroyed;
         public float CurrentHealth => _currentHealth;
 
@@ -35,6 +39,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void Awake()
         {
             _waveManager = FindObjectOfType<SmartWaveManager>();
+
+            // [KRİTİK] Oyun başlar başlamaz, senin ayarladığın boyutu hafızaya al
+            if (_barrierModel != null) _originalModelScale = _barrierModel.transform.localScale;
+            if (_uiCanvas != null) _originalCanvasScale = _uiCanvas.transform.localScale;
         }
 
         private void Start()
@@ -46,7 +54,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
                 _waveManager.OnGameReset += ResetBarrier;
             }
             
-            ResetBarrier();
+            // ResetBarrier yerine, ilk başlangıçta sadece değerleri sıfırla
+            // (Çünkü ResetBarrier boyutu değiştirebilir, Start'ta buna gerek yok)
+            _currentHealth = _maxHealth;
+            UpdateUI();
         }
 
         private void OnDestroy()
@@ -57,7 +68,9 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         public void InitializeHealth(float maxHealth, DeathEffectPool deathPool) 
         {
             _maxHealth = maxHealth;
-            ResetBarrier();
+            _currentHealth = _maxHealth;
+            _isDestroyed = false;
+            UpdateUI();
         }
 
         public void TakeDamage(float amount)
@@ -80,20 +93,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void BreakBarrier()
         {
             _isDestroyed = true;
-            
-            // 1. Ölüm haberini yay (Bu, BaseObjectiveController'ı tetikleyip Reset'i başlatabilir)
             OnDeath?.Invoke();
 
-            // [KRİTİK DÜZELTME] Haber verdikten sonra kontrol et:
-            // Eğer OnDeath zinciri sırasında oyun resetlendiyse, ben artık "Destroyed" değilimdir.
-            // O yüzden aşağıdaki kapatma işlemlerini İPTAL ET.
-            if (!_isDestroyed) 
-            {
-                // Debug.Log("🛡️ Yıkılma iptal edildi çünkü reset geldi.");
-                return; 
-            }
+            if (!_isDestroyed) return; 
 
-            // Eğer reset gelmediyse normal yıkılma işlemine devam et
             if (_barrierModel) _barrierModel.SetActive(false);
             if (_uiCanvas) _uiCanvas.gameObject.SetActive(false);
             if (_destructionParticles) _destructionParticles.Play();
@@ -108,23 +111,25 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         private void ResetBarrier()
         {
             _currentHealth = _maxHealth;
-            
-            // [ÖNEMLİ] Burası false yapıldığı için yukarıdaki BreakBarrier duracak
-            _isDestroyed = false; 
+            _isDestroyed = false;
 
-            // 1. Görselleri Aç ve Düzelt
+            // 1. Modeli Aç ve Orijinal Boyutuna Getir
             if (_barrierModel) 
             {
                 _barrierModel.SetActive(true);
                 _barrierModel.transform.DOKill(); 
-                _barrierModel.transform.localScale = Vector3.one; 
+                
+                // [DÜZELTME] Vector3.one yerine orijinal scale kullan
+                _barrierModel.transform.localScale = _originalModelScale; 
             }
 
+            // 2. UI'ı Aç ve Orijinal Boyutuna Getir
             if (_uiCanvas) 
             {
                 _uiCanvas.gameObject.SetActive(true);
                 _uiCanvas.transform.DOKill();
-                _uiCanvas.transform.localScale = Vector3.one;
+                // [DÜZELTME] Vector3.one yerine orijinal scale kullan
+                _uiCanvas.transform.localScale = _originalCanvasScale;
             }
             
             var navObstacle = GetComponent<UnityEngine.AI.NavMeshObstacle>();
@@ -134,6 +139,8 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             if (col) col.enabled = true;
 
             UpdateUI();
+            
+            Debug.Log($"♻️ {gameObject.name}: Orijinal boyutlarıyla ({_originalModelScale}) tamir edildi.");
         }
 
         private void UpdateUI()
