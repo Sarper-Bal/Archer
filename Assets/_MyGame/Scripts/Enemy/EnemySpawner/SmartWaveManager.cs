@@ -3,16 +3,24 @@ using System.Collections;
 using System.Collections.Generic;
 using IndianOceanAssets.Engine2_5D.Data;
 using IndianOceanAssets.Engine2_5D;
+using ArcadeBridge.ArcadeIdleEngine.Data.Variables; // Save Sistemi (Int/Float Variable)
 
 namespace IndianOceanAssets.Engine2_5D.Managers
 {
     public class SmartWaveManager : MonoBehaviour
     {
-        [Header("Ayarlar")]
+        [Header("⚙️ Ayarlar")]
         [SerializeField] private DirectorConfig _config;
         [SerializeField] private EnemyDatabase _enemyDatabase;
 
-        [Header("Debug")]
+        [Header("💾 Kayıt Sistemi (Save)")]
+        [Tooltip("Kaçıncı dalgada olduğunu tutan kayıt dosyası.")]
+        [SerializeField] private IntVariable _savedWaveNumber;
+        
+        [Tooltip("Düşman bütçesini tutan kayıt dosyası.")]
+        [SerializeField] private FloatVariable _savedBudget;
+
+        [Header("📊 Debug - İzleme")]
         [SerializeField] private int _currentWaveNumber = 1;
         [SerializeField] private float _currentTotalBudget;
         [SerializeField] private bool _isSpawningInProgress = false;
@@ -22,10 +30,10 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         public List<EnemyDefinition> NextWaveEnemies { get; private set; } = new List<EnemyDefinition>();
         private WaveRule _currentRule;
 
-        // --- EVENTLER (Eksik olan eklendi) ---
-        public event System.Action OnWaveStarted;   // [YENİ] Savaş başladı sinyali
-        public event System.Action OnWaveCompleted; // Savaş bitti (Kazanma)
-        public event System.Action OnGameReset;     // Oyun resetlendi (Kaybetme/Tamir)
+        // --- EVENTLER ---
+        public event System.Action OnWaveStarted;   
+        public event System.Action OnWaveCompleted; 
+        public event System.Action OnGameReset;     
 
         private void Start()
         {
@@ -35,13 +43,37 @@ namespace IndianOceanAssets.Engine2_5D.Managers
 
         public void InitializeGame()
         {
-            if (_config != null) _currentTotalBudget = _config.StartingBudget;
-            _currentWaveNumber = 1;
+            // 1. WAVE KAYDINI YÜKLE
+            if (_savedWaveNumber != null && _savedWaveNumber.RuntimeValue > 0)
+            {
+                _currentWaveNumber = _savedWaveNumber.RuntimeValue;
+            }
+            else
+            {
+                _currentWaveNumber = 1;
+                // Eğer kayıt yoksa veya 0 ise, varsayılanı kaydet
+                if (_savedWaveNumber != null) _savedWaveNumber.RuntimeValue = 1;
+            }
+
+            // 2. BÜTÇE KAYDINI YÜKLE
+            if (_savedBudget != null && _savedBudget.RuntimeValue > 0)
+            {
+                _currentTotalBudget = _savedBudget.RuntimeValue;
+            }
+            else
+            {
+                if (_config != null) _currentTotalBudget = _config.StartingBudget;
+                // Varsayılanı kaydet
+                if (_savedBudget != null) _savedBudget.RuntimeValue = _currentTotalBudget;
+            }
+
             _activeEnemiesRegistry.Clear();
             _isResetting = false;
+
+            Debug.Log($"💾 Oyun Yüklendi. Wave: {_currentWaveNumber}, Bütçe: {_currentTotalBudget}");
         }
 
-        // --- YENİ: Spawner bu fonksiyonu çağırarak savaşı başlattığını haber verir ---
+        // --- SPAWNER İLETİŞİMİ ---
         public void NotifyWaveStarted()
         {
             OnWaveStarted?.Invoke();
@@ -63,8 +95,11 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
             _activeEnemiesRegistry.Clear();
 
+            // Cezalandır (Bütçe düşer ve KAYDEDİLİR)
             OnWaveLost();
-            OnGameReset?.Invoke(); // Kapılar ve Upgrade kutuları burada resetlenir
+            
+            // Sahneyi Tamir Et
+            OnGameReset?.Invoke(); 
 
             _isResetting = false;
             Debug.Log("🔄 Yeni Wave İsteniyor...");
@@ -170,7 +205,11 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             _currentTotalBudget += bonus;
             _currentWaveNumber++;
 
-            OnGameReset?.Invoke(); // Kazanılınca da yapıları tamir et
+            // [KAYIT İŞLEMİ] Yeni verileri diske (ScriptableObject'e) yaz
+            if (_savedWaveNumber != null) _savedWaveNumber.RuntimeValue = _currentWaveNumber;
+            if (_savedBudget != null) _savedBudget.RuntimeValue = _currentTotalBudget;
+
+            OnGameReset?.Invoke(); 
             OnWaveCompleted?.Invoke();
         }
 
@@ -179,6 +218,11 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             float penalty = _currentTotalBudget * _config.LossPenaltyPercentage;
             _currentTotalBudget -= penalty;
             if (_currentTotalBudget < _config.StartingBudget) _currentTotalBudget = _config.StartingBudget;
+
+            // [KAYIT İŞLEMİ] Bütçe düştü, bunu da kaydet ki hile olmasın (çık-gir yapınca zorluk artmasın)
+            if (_savedBudget != null) _savedBudget.RuntimeValue = _currentTotalBudget;
+            
+            // Not: Wave numarasını kaydetmiyoruz çünkü değişmedi.
         }
         
         private IEnumerator FailsafeRoutine()

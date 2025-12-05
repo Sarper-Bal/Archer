@@ -20,7 +20,7 @@ MonoBehaviour:
     SwarmPercent: 100
     RusherPercent: 0
     TankPercent: 0
-    SwarmInterval: 1
+    SwarmInterval: 0.5
     RusherInterval: 0
     TankInterval: 0
   - MinWinWave: 2

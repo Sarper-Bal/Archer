@@ -8476,6 +8476,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Managers.SmartWaveManager
   _config: {fileID: 11400000, guid: 39e231b078beb4a88904ba97a4e4847b, type: 2}
   _enemyDatabase: {fileID: 11400000, guid: 6534a629395a14994bba8607110a58e4, type: 2}
+  _savedWaveNumber: {fileID: 11400000, guid: 524fedb92c2714eb8b2b3ad220db2618, type: 2}
+  _savedBudget: {fileID: 11400000, guid: 18add85ed50bf423cadf369b5bd4152a, type: 2}
   _currentWaveNumber: 1
   _currentTotalBudget: 0
   _isSpawningInProgress: 0

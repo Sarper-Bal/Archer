@@ -10,8 +10,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e8e675a33b0740638e7ba37d84cde8ff, type: 3}
-  m_Name: GateLevel_Variable
+  m_Name: Save_CurrentWave
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Data.Variables.IntVariable
-  _saveId: gate_leval_01s
+  _saveId: Save_CurrentWave_01
   _initialValue: 0
   _overrideValue: 0

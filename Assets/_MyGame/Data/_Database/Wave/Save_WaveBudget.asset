@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e8e675a33b0740638e7ba37d84cde8ff, type: 3}
-  m_Name: GateLevel_Variable
-  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Data.Variables.IntVariable
-  _saveId: gate_leval_01s
+  m_Script: {fileID: 11500000, guid: 1e27721c14af40be93bc373631d656aa, type: 3}
+  m_Name: Save_WaveBudget
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Data.Variables.FloatVariable
+  _saveId: Save_WaveBudget_01
   _initialValue: 0
   _overrideValue: 0
