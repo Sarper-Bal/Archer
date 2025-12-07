@@ -22,7 +22,7 @@ GameObject:
   - component: {fileID: 9014384587773107732}
   - component: {fileID: 2127339152605955290}
   m_Layer: 6
-  m_Name: "EnemyA\u0131"
+  m_Name: AllyAI
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -38,7 +38,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 3.4, y: 0.67, z: 6.81}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
@@ -174,7 +174,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1da0e1c5aafa54657bb5b00807501dcd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.EnemyStats
-  _enemyDefinition: {fileID: 11400000, guid: 552672598014c46da97f48a0e13b1806, type: 2}
+  _enemyDefinition: {fileID: 11400000, guid: d524fd4a481154c098b6b397945dc001, type: 2}
 --- !u!114 &5729829292197405962
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -246,6 +246,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5906cb451583a4a3da94cc7c10c01415, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Enemy.EnemyContactDamager
+  _targetLayers:
+    serializedVersion: 2
+    m_Bits: 128
   _destroyOnHit: 1
 --- !u!114 &2127339152605955290
 MonoBehaviour:

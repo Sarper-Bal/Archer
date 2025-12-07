@@ -6,8 +6,12 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
     [RequireComponent(typeof(EnemyStats))]
     public class EnemyContactDamager : MonoBehaviour
     {
-        [Header("Ayarlar")]
-        [SerializeField] private bool _destroyOnHit = true; // Kamikaze modu (Vurunca kendini yok et)
+        [Header("🎯 Hedef Ayarları")]
+        [Tooltip("Bu birim kime çarparsa patlasın/hasar versin? (Çoklu seçim yapabilirsin)")]
+        [SerializeField] private LayerMask _targetLayers;
+
+        [Header("💥 Davranış")]
+        [SerializeField] private bool _destroyOnHit = true; // Kamikaze modu
 
         private EnemyStats _stats;
         private bool _hasHit = false; // Çifte hasar kilidi
@@ -24,25 +28,25 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
 
         private void OnCollisionEnter(Collision collision)
         {
-            // 1. KİLİT: Bu karede zaten birine vurduysam dur.
+            // 1. KİLİT: Zaten vurduysam çık
             if (_hasHit) return;
 
-            GameObject targetObj = collision.gameObject;
+            GameObject obj = collision.gameObject;
 
-            // 2. DOST ATEŞİ KORUMASI: Çarptığım şey kendi arkadaşımsa (Enemy) dur.
-            if (targetObj.CompareTag("Enemy")) return;
+            // 2. [KRİTİK OPTİMİZASYON] Katman Kontrolü
+            // Çarptığım objenin katmanı, hedef listemde var mı?
+            // (Yoksa GetComponent yapmadan hemen çık, işlemciyi yorma)
+            if (!IsInLayerMask(obj.layer, _targetLayers)) return;
 
-            // 3. HEDEF KONTROLÜ: Etikete DEĞİL, canı olup olmadığına bakıyoruz.
-            // (Player, Barrier, Kutu... Hepsi çalışır)
-            if (targetObj.TryGetComponent(out IDamageable damageable))
+            // 3. Hasar Verme
+            if (obj.TryGetComponent(out IDamageable damageable))
             {
-                // Buldum! Hasar ver.
                 DealDamage(damageable);
             }
             else
             {
-                // Belki collider çocuğundadır, ana objeye bakalım.
-                var parentDamageable = targetObj.GetComponentInParent<IDamageable>();
+                // Belki canı olan parça parent'tadır
+                var parentDamageable = obj.GetComponentInParent<IDamageable>();
                 if (parentDamageable != null)
                 {
                     DealDamage(parentDamageable);
@@ -50,32 +54,36 @@ namespace ArcadeBridge.ArcadeIdleEngine.Enemy
             }
         }
 
+        // Katman kontrolü yapan yardımcı matematiksel fonksiyon
+        private bool IsInLayerMask(int layer, LayerMask mask)
+        {
+            return (mask.value & (1 << layer)) != 0;
+        }
+
         private void DealDamage(IDamageable target)
         {
             if (_stats.Definition == null) return;
 
-            _hasHit = true; // Kilidi kapat, bu karede başkasına vurma.
+            _hasHit = true; // Kilidi kapat
 
             float damageAmount = _stats.Definition.ContactDamage;
-            
-            // Hasarı arayüz üzerinden ver
             target.TakeDamage(damageAmount);
 
-            // Eğer ayarlıysa kendini yok et (Kamikaze)
+            // Kendini yok et (Kamikaze)
             if (_destroyOnHit) SelfDestruct();
         }
 
         private void SelfDestruct()
         {
-            // Ölüm Efekti Oynat (Varsa)
+            // Ölüm Efekti
             if (_stats.Definition != null && _stats.Definition.DeathEffectPool != null)
             {
                 var effect = _stats.Definition.DeathEffectPool.Get();
-                effect.transform.position = transform.position + Vector3.up; // Efekt biraz yukarıda çıksın
+                effect.transform.position = transform.position + Vector3.up; 
                 effect.Initialize(_stats.Definition.DeathEffectPool);
             }
 
-            // Düşmanı havuza geri gönder
+            // Objeyi kapat
             gameObject.SetActive(false);
         }
     }
