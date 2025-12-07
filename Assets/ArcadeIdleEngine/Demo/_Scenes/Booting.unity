@@ -634,7 +634,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _saveManager: {fileID: 11400000, guid: 33fac3949785b4e6ebd037957127756c, type: 2}
   _progressBarImage: {fileID: 1178921090}
-  LoadingLevelName: Sample Game
+  LoadingLevelName: S_1
 --- !u!4 &1460028971
 Transform:
   m_ObjectHideFlags: 0
