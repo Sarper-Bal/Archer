@@ -9733,14 +9733,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a4b5bd30c244e45d78eadaaadc32b81f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.BasicProjectile
-  _trackingMode: 1
-  speed: 10
-  lifeTime: 3
-  explosionPool: {fileID: 11400000, guid: 362344e764db340dc81250abb0233dab, type: 2}
-  explosionRadius: 0.5
-  damageLayer:
-    serializedVersion: 2
-    m_Bits: 64
 --- !u!1 &4033740031146815036
 GameObject:
   m_ObjectHideFlags: 0

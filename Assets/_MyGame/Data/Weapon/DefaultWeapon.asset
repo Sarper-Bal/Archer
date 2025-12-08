@@ -16,7 +16,7 @@ MonoBehaviour:
   _playerMaxHealth: 20
   _canFireWhileMoving: 0
   _range: 10
-  _attacksPerSecond: 1
+  _attacksPerSecond: 10
   _damage: 10
   _rotationSpeed: 0
   _trackingMode: 1
