@@ -29,12 +29,12 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
         [SerializeField] private float _spawnInterval = 1.0f;
 
         [Header("⚙️ Havuz Ayarları")]
-        [Tooltip("Başlangıçta kaç asker hazır beklesin?")]
         [SerializeField] private int _initialPoolSize = 10;
 
-        // --- İÇ HAVUZ SİSTEMİ (Internal Pool) ---
+        // --- İÇ HAVUZ ve TAKİP LİSTESİ ---
         private Queue<GameObject> _poolQueue = new Queue<GameObject>();
-        private Transform _poolContainer; // Hiyerarşide düzenli dursunlar diye
+        private HashSet<GameObject> _activeAlliesList = new HashSet<GameObject>(); // Sahnedeki askerleri takip eder
+        private Transform _poolContainer; 
 
         private SmartWaveManager _waveManager;
         private Coroutine _spawnRoutine;
@@ -45,12 +45,14 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             _waveManager = FindObjectOfType<SmartWaveManager>();
             if (_targetInventory == null) _targetInventory = GetComponent<Inventory>();
 
-            // Havuz için objenin altında bir klasör (Container) oluştur
+            // Havuz Container'ı
             GameObject container = new GameObject("Unit_Pool_Container");
             container.transform.SetParent(transform);
             _poolContainer = container.transform;
+            
+            // Konumunu sıfırla ki içinde oluşanlar saçma yerlere gitmesin
+            _poolContainer.localPosition = Vector3.zero; 
 
-            // Başlangıç havuzunu oluştur
             InitializeInternalPool();
         }
 
@@ -59,8 +61,8 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             if (_waveManager != null)
             {
                 _waveManager.OnWaveStarted += StartSpawning;
-                _waveManager.OnWaveCompleted += StopSpawning;
-                _waveManager.OnGameReset += StopSpawning;
+                _waveManager.OnWaveCompleted += OnWaveEnded; // [YENİ] Temizlik için
+                _waveManager.OnGameReset += OnWaveEnded;
             }
         }
 
@@ -69,40 +71,26 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             if (_waveManager != null)
             {
                 _waveManager.OnWaveStarted -= StartSpawning;
-                _waveManager.OnWaveCompleted -= StopSpawning;
-                _waveManager.OnGameReset -= StopSpawning;
+                _waveManager.OnWaveCompleted -= OnWaveEnded;
+                _waveManager.OnGameReset -= OnWaveEnded;
             }
         }
 
-        // --- HAVUZ YÖNETİMİ (Kritik Kısım) ---
+        // --- HAVUZ YÖNETİMİ ---
 
         private void InitializeInternalPool()
         {
-            if (_allyPrefab == null)
-            {
-                Debug.LogError("❌ InventoryUnitSpawner: Asker Prefabı (Ally Prefab) eksik!");
-                return;
-            }
-
-            for (int i = 0; i < _initialPoolSize; i++)
-            {
-                CreateNewUnitForPool();
-            }
+            if (_allyPrefab == null) return;
+            for (int i = 0; i < _initialPoolSize; i++) CreateNewUnitForPool();
         }
 
         private GameObject CreateNewUnitForPool()
         {
-            // Askeri yarat ve container'ın içine koy
             GameObject unit = Instantiate(_allyPrefab, _poolContainer);
             
-            // Dönüş mekanizmasını bağla (EnemyBehaviorController kullanıyorlarsa)
             var controller = unit.GetComponent<EnemyBehaviorController>();
-            if (controller != null)
-            {
-                controller.OnReturnToPool = ReturnUnitToPool;
-            }
+            if (controller != null) controller.OnReturnToPool = ReturnUnitToPool;
 
-            // Pasif yap ve kuyruğa ekle
             unit.SetActive(false);
             _poolQueue.Enqueue(unit);
             return unit;
@@ -110,16 +98,21 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 
         private void ReturnUnitToPool(EnemyBehaviorController unitController)
         {
-            // Asker öldüğünde veya işi bittiğinde buraya gelecek
+            if (unitController == null) return;
+            
             GameObject unitObj = unitController.gameObject;
+            
+            // Listeden düş (Artık sahnede değil)
+            if (_activeAlliesList.Contains(unitObj)) _activeAlliesList.Remove(unitObj);
+
             unitObj.SetActive(false);
-            unitObj.transform.SetParent(_poolContainer); // Yuvaya dön
-            unitObj.transform.localPosition = Vector3.zero; // Temizlik
+            unitObj.transform.SetParent(_poolContainer);
+            unitObj.transform.localPosition = Vector3.zero; 
             
             _poolQueue.Enqueue(unitObj);
         }
 
-        // --- SPAWN İŞLEMLERİ ---
+        // --- SPAWN VE TEMİZLİK ---
 
         private void StartSpawning()
         {
@@ -128,10 +121,39 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
             _spawnRoutine = StartCoroutine(SpawnProcess());
         }
 
-        private void StopSpawning()
+        private void OnWaveEnded()
         {
+            // 1. Spawner'ı durdur
             _isSpawningActive = false;
             if (_spawnRoutine != null) StopCoroutine(_spawnRoutine);
+
+            // 2. [YENİ] SAHNEDEKİ TÜM DOST ASKERLERİ TEMİZLE
+            ClearAllActiveUnits();
+        }
+
+        private void ClearAllActiveUnits()
+        {
+            // Listeyi kopyala çünkü döngü içinde liste değişecek (ReturnUnitToPool çağrılınca)
+            var unitsToClear = new List<GameObject>(_activeAlliesList);
+            
+            foreach (var unit in unitsToClear)
+            {
+                if (unit != null)
+                {
+                    // Askeri havuza geri yolla (Manuel tetikleme)
+                    var controller = unit.GetComponent<EnemyBehaviorController>();
+                    if (controller != null) ReturnUnitToPool(controller);
+                    else
+                    {
+                        // Controller yoksa manuel kapat
+                        unit.SetActive(false);
+                        unit.transform.SetParent(_poolContainer);
+                        _poolQueue.Enqueue(unit);
+                    }
+                }
+            }
+            _activeAlliesList.Clear();
+            Debug.Log("🧹 Dost birlikler geri çekildi.");
         }
 
         private IEnumerator SpawnProcess()
@@ -140,16 +162,11 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 
             while (_isSpawningActive)
             {
-                // Envanter kontrolü
                 if (_targetInventory != null && _targetInventory.TryRemove(_unitItemDef, out Item removedItem))
                 {
-                    // "Asker Paketi" eşyasını yok et (Tüket)
                     removedItem.ReleaseToPool();
-
-                    // "Canlı Asker" çağır
                     SpawnLiveUnit();
                 }
-
                 yield return wait;
             }
         }
@@ -160,48 +177,50 @@ namespace ArcadeBridge.ArcadeIdleEngine.Interactables
 
             GameObject unit;
 
-            // 1. Havuzdan Çek (Yoksa Yeni Yarat)
+            // 1. Havuzdan Çek (Objenin KAPALI gelmesi garanti)
             if (_poolQueue.Count > 0)
             {
                 unit = _poolQueue.Dequeue();
-                // Eğer havuzdaki obje silinmişse (hata durumunda) yenisini yap
-                if (unit == null) unit = CreateNewUnitForPool(); 
+                if (unit == null) unit = CreateNewUnitForPool();
             }
             else
             {
-                // Havuz boşaldı! Dinamik olarak yeni bir tane üret (Limit yok)
-                // Ama kuyruğa eklemiyoruz, direkt kullanıyoruz.
                 unit = Instantiate(_allyPrefab, _poolContainer);
+                unit.SetActive(false); // Yeni yaratılanı hemen kapat ki ayar yapabilelim
                 var controller = unit.GetComponent<EnemyBehaviorController>();
                 if (controller != null) controller.OnReturnToPool = ReturnUnitToPool;
             }
 
-            // 2. [ÖNEMLİ] Önce Pozisyonu Ayarla (Obje hala inaktif olabilir)
+            // 2. Takip Listesine Ekle
+            _activeAlliesList.Add(unit);
+
+            // 3. [KRİTİK] Pozisyonlama (Obje hala KAPALI)
+            // Önce Transform'u taşı
             unit.transform.position = _spawnPoint.position;
             unit.transform.rotation = _spawnPoint.rotation;
 
-            // 3. NavMeshAgent Reset (Warp)
+            // 4. NavMeshAgent Reset (Warp)
+            // Agent kapalıyken Warp çalışmaz, ama obje kapalıyken Agent'ı açamayız.
+            // Bu yüzden önce transformu ayarladık, şimdi objeyi açıp hemen Warp atacağız.
+            
+            unit.SetActive(true); // <--- Obje burada açılıyor
+
             var agent = unit.GetComponent<NavMeshAgent>();
             if (agent != null)
             {
-                agent.enabled = false; // Garanti olsun diye kapat
-                unit.transform.position = _spawnPoint.position; // Transformu zorla
-                agent.enabled = true;  // Aç
-                if (agent.isOnNavMesh) agent.Warp(_spawnPoint.position); // Işınla
+                agent.enabled = true;
+                // Warp, agent'ı navmesh üzerindeki en yakın geçerli noktaya ışınlar.
+                // SpawnPoint havada veya yerin altındaysa 0,0,0'a atabilir.
+                // Bu yüzden SpawnPoint'in yere (NavMesh'e) tam değdiğinden emin ol.
+                agent.Warp(_spawnPoint.position); 
+                
+                // Ekstra güvenlik: Yolu sıfırla
+                agent.ResetPath();
             }
-
-            // 4. [FİNAL] Artık her şey hazır, askeri uyandır!
-            unit.SetActive(true);
-
-            // Eğer özel bir başlatma/reset kodu varsa (Can doldurma vb.)
-            var stats = unit.GetComponent<EnemyStats>();
-            if (stats != null) 
-            {
-                 // stats.InitializeRuntime(...) gerekebilir eğer canı dolmuyorsa
-                 // Ama genelde OnEnable bunu halleder.
-                 var health = unit.GetComponent<Health>();
-                 if(health) health.ResetHealth(); // Canını fulle
-            }
+            
+            // 5. Canı Fulle (Eğer havuzdan eski/yaralı bir asker geldiyse)
+            var health = unit.GetComponent<Health>();
+            if (health != null) health.ResetHealth();
         }
     }
 }
