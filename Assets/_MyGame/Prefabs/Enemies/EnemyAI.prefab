@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 4081166450533138430}
   - component: {fileID: 7288936177112714446}
   - component: {fileID: 789308386387794532}
+  - component: {fileID: -8622043596339145108}
   - component: {fileID: 9014384587773107732}
   - component: {fileID: 2127339152605955290}
   m_Layer: 7
@@ -234,6 +235,18 @@ MonoBehaviour:
   _rotationSpeed: 0
   _arrivalDistance: 1
   _loopPath: 1
+--- !u!114 &-8622043596339145108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8282702779294200114}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06972213ed24e49ba9bb7b48ef45c455, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.DirectionalEnemyMover
 --- !u!114 &9014384587773107732
 MonoBehaviour:
   m_ObjectHideFlags: 0

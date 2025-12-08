@@ -885,6 +885,24 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 3, y: 2, z: 3}
   m_Center: {x: 0, y: 1, z: 0}
+--- !u!1 &215774465 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8282702779294200114, guid: a46a321f89cff4d71a31c93136b6f640,
+    type: 3}
+  m_PrefabInstance: {fileID: 959438958}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &215774479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 215774465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06972213ed24e49ba9bb7b48ef45c455, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.DirectionalEnemyMover
 --- !u!1001 &229842168
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3670,7 +3688,11 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8282702779294200114, guid: a46a321f89cff4d71a31c93136b6f640,
+        type: 3}
+      insertIndex: 11
+      addedObject: {fileID: 215774479}
   m_SourcePrefab: {fileID: 100100000, guid: a46a321f89cff4d71a31c93136b6f640, type: 3}
 --- !u!1001 &992293213
 PrefabInstance:
@@ -4265,7 +4287,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1271283266
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -4,12 +4,11 @@ using ArcadeBridge.ArcadeIdleEngine.Enemy;
 
 namespace IndianOceanAssets.Engine2_5D
 {
-    // [YENİ] Düşman Sınıfları
     public enum EnemyCategory
     {
-        Swarm,  // Sürü (Slime, Böcek - Kalabalık yapar)
-        Rusher, // Baskıncı (Yarasa, Kurt - Hızlı dırlar)
-        Tank    // Zırhlı (Golem, Şövalye - Zor ölür)
+        Swarm,
+        Rusher,
+        Tank
     }
 
     public enum EnemyBehaviorType
@@ -17,14 +16,15 @@ namespace IndianOceanAssets.Engine2_5D
         None,
         SimpleChaser,
         Stalker,
-        Patrol
+        Patrol,
+        Directional // [YENİ] Yeni hareket tipi eklendi
     }
 
     [CreateAssetMenu(fileName = "NewEnemyDefinition", menuName = "MyGame/Enemy Definition")]
     public class EnemyDefinition : ScriptableObject
     {
         [Header("🏷️ Sınıflandırma")]
-        public EnemyCategory Category = EnemyCategory.Swarm; // [YENİ]
+        public EnemyCategory Category = EnemyCategory.Swarm;
 
         [Header("📊 İstatistikler")]
         [Tooltip("Değeri değiştirdiğinde puan otomatik güncellenir.")]
@@ -39,6 +39,10 @@ namespace IndianOceanAssets.Engine2_5D
         [Header("🧠 Yapay Zeka")]
         [SerializeField] private EnemyBehaviorType _defaultBehavior = EnemyBehaviorType.SimpleChaser;
         public RouteID PatrolRouteID; 
+        
+        // [YENİ] Doğrusal hareket yönü (X, Y, Z). Genelde Z= -1 (Aşağı) veya Z= 1 (Yukarı) olur.
+        [Tooltip("Sadece 'Directional' davranışı seçiliyse kullanılır.")]
+        public Vector3 FixedDirection = new Vector3(0, 0, -1);
 
         [Header("✨ Görsel & Efekt")]
         public GameObject EnemyPrefab; 
@@ -46,10 +50,8 @@ namespace IndianOceanAssets.Engine2_5D
 
         public EnemyBehaviorType DefaultBehavior => _defaultBehavior;
 
-        // --- OTOMATİK HESAPLAMA ---
         private void OnValidate()
         {
-            // Formül: (Can + (Hasar x 2)) * (Hız / 3)
             float rawScore = (MaxHealth + (ContactDamage * 2f)) * (MoveSpeed / 3f);
             ThreatScore = Mathf.Round(rawScore * 10f) / 10f;
         }

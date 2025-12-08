@@ -2,7 +2,7 @@ using UnityEngine;
 using ArcadeBridge.ArcadeIdleEngine.Experimental; 
 using ArcadeBridge.ArcadeIdleEngine.Enemy; 
 using ArcadeBridge.ArcadeIdleEngine.Spawners; 
-using IndianOceanAssets.Engine2_5D.Managers; // SmartWaveManager için
+using IndianOceanAssets.Engine2_5D.Managers;
 
 namespace IndianOceanAssets.Engine2_5D
 {
@@ -17,11 +17,9 @@ namespace IndianOceanAssets.Engine2_5D
         private SimpleEnemyMover _simpleMover;
         private StalkerEnemyMover _stalkerMover;
         private WaypointEnemyMover _waypointMover;
+        private DirectionalEnemyMover _directionalMover; // Yeni Referans
         
-        // Cachelenmiş Manager (Performans için her karede Find yapmamak adına)
         private SmartWaveManager _cachedWaveManager;
-
-        // Eve Dönüş Bileti
         public System.Action<EnemyBehaviorController> OnReturnToPool;
 
         private void Awake()
@@ -30,8 +28,8 @@ namespace IndianOceanAssets.Engine2_5D
             _simpleMover = GetComponent<SimpleEnemyMover>();
             _stalkerMover = GetComponent<StalkerEnemyMover>();
             _waypointMover = GetComponent<WaypointEnemyMover>();
+            _directionalMover = GetComponent<DirectionalEnemyMover>(); // Bileşeni almaya çalış
             
-            // Sahnedeki manager'ı bul ve sakla (Bunu sadece 1 kere yapar)
             _cachedWaveManager = FindObjectOfType<SmartWaveManager>();
         }
 
@@ -45,22 +43,15 @@ namespace IndianOceanAssets.Engine2_5D
             {
                 SetBehavior(EnemyBehaviorType.SimpleChaser);
             }
-            
-            // [NOT] Register işlemi Spawner tarafından yapılıyor, burada gerek yok.
-            // Ama çift dikiş olsun derseniz buraya da _cachedWaveManager.RegisterEnemy(this) eklenebilir.
         }
 
         private void OnDisable()
         {
             DisableAllBehaviors();
-            
-            // [KRİTİK] Sahneden çıkarken (ölüm veya pool) kaydını sildir!
             if (_cachedWaveManager != null)
             {
                 _cachedWaveManager.UnregisterEnemy(this);
             }
-            
-            // Spawner'a beni geri alması için haber ver (Pool sistemi)
             OnReturnToPool?.Invoke(this);
         }
 
@@ -80,6 +71,19 @@ namespace IndianOceanAssets.Engine2_5D
                 case EnemyBehaviorType.Patrol:
                     if (_waypointMover) _waypointMover.enabled = true;
                     break;
+                
+                // [YENİ SİSTEM BURADA DEVREYE GİRİYOR]
+                case EnemyBehaviorType.Directional:
+                    if (_directionalMover != null)
+                    {
+                        _directionalMover.enabled = true;
+                    }
+                    else
+                    {
+                        // EĞER BU HATAYI GÖRÜYORSAN PREFAB'A SCRİPT EKLEMEMİŞSİN DEMEKTİR
+                        Debug.LogError($"❌ HATA: {gameObject.name} üzerinde 'DirectionalEnemyMover' scripti YOK! Lütfen Prefab'a ekleyin.");
+                    }
+                    break;
             }
         }
 
@@ -88,6 +92,7 @@ namespace IndianOceanAssets.Engine2_5D
             if (_simpleMover) _simpleMover.enabled = false;
             if (_stalkerMover) _stalkerMover.enabled = false;
             if (_waypointMover) _waypointMover.enabled = false;
+            if (_directionalMover) _directionalMover.enabled = false;
 
             var rb = GetComponent<Rigidbody>();
             if (rb != null)
