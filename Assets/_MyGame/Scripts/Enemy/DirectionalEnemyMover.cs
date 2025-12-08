@@ -2,6 +2,10 @@ using UnityEngine;
 
 namespace IndianOceanAssets.Engine2_5D
 {
+    /// <summary>
+    /// [TR] Düşmanları tek bir yönde, fizik tabanlı ve CPU dostu şekilde hareket ettirir.
+    /// [EN] Moves enemies in a single direction with physics-based, CPU-friendly logic.
+    /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(EnemyStats))]
     public class DirectionalEnemyMover : MonoBehaviour
@@ -9,16 +13,17 @@ namespace IndianOceanAssets.Engine2_5D
         private Rigidbody _rb;
         private EnemyStats _stats;
         
-        private Vector3 _moveVelocity;
-        private Vector3 _cachedDirection;
-        private bool _isInitialized = false; // [DÜZELTME] Başlatma kontrolü eklendi
+        // [OPTIMIZATION] Hızı her karede çarpmak yerine, sonucu saklıyoruz.
+        private Vector3 _cachedGroundVelocity; 
+        private bool _isInitialized = false;
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
             _stats = GetComponent<EnemyStats>();
             
-            _rb.useGravity = true;
+            // Fizik Motoru Ayarları (Performans için kritik)
+            _rb.useGravity = true; 
             _rb.isKinematic = false; 
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
             _rb.constraints = RigidbodyConstraints.FreezeRotation; 
@@ -26,64 +31,67 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void OnEnable()
         {
-            // Script her açıldığında sıfırla, veriyi bekle.
+            // Her doğuşta durumu sıfırla
             _isInitialized = false;
-            _cachedDirection = Vector3.zero;
+            _cachedGroundVelocity = Vector3.zero;
         }
 
         private void FixedUpdate()
         {
-            // 1. Veri henüz gelmediyse hiçbir şey yapma (Hata vermesini engeller)
-            if (_stats == null || _stats.Definition == null) return;
-
-            // 2. Veri geldi ama yönü henüz hesaplamadıysak hesapla (Sadece 1 kez çalışır)
+            // 1. Veri Hazır mı? (Veri gelmediyse işlem yapma)
             if (!_isInitialized)
             {
-                InitializeMovement();
-            }
-
-            // 3. Eğer hala yön yoksa (0,0,0 ise) hareket etme
-            if (_cachedDirection == Vector3.zero) return;
-
-            Move();
-        }
-
-        private void InitializeMovement()
-        {
-            // Yön verisini al
-            Vector3 rawDirection = _stats.Definition.FixedDirection;
-
-            // Eğer Inspector'da (0,0,0) unutulmuşsa hata verme, sadece çalışma
-            if (rawDirection == Vector3.zero) 
-            {
-                // Debug.LogWarning($"{gameObject.name} için FixedDirection (0,0,0) girilmiş! Hareket etmeyecek.");
+                // Veri (Stats) yüklendi mi kontrol et
+                if (_stats != null && _stats.Definition != null)
+                {
+                    InitializeMovement();
+                }
                 return;
             }
 
-            _cachedDirection = rawDirection.normalized;
-            _cachedDirection.y = 0; // Yüksekliği koru
-
-            // Yüzünü dön
-            if (_cachedDirection != Vector3.zero)
-            {
-                transform.rotation = Quaternion.LookRotation(_cachedDirection);
-            }
-
-            _isInitialized = true; // Artık hazırsın
+            // 2. Fizik Hareketi (Matematik işlemi yok, sadece atama var)
+            ApplyMovement();
         }
 
-        private void Move()
+        /// <summary>
+        /// [TR] Tüm matematiksel hesaplamalar burada sadece 1 kere yapılır.
+        /// </summary>
+        private void InitializeMovement()
         {
-            // Hızı hesapla
-            _moveVelocity = _cachedDirection * _stats.Definition.MoveSpeed;
+            // Yön ve Hız verisini al
+            Vector3 direction = _stats.Definition.FixedDirection.normalized;
+            float speed = _stats.Definition.MoveSpeed;
 
-            // Yerçekimini koruyarak hızı uygula
+            // Y eksenini temizle (Yere paralel gitmesi için)
+            direction.y = 0;
+
+            // Yönü cache'le (Yüzünü dönme)
+            if (direction != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(direction);
+                // [OPTIMIZATION] Hız vektörünü hesapla ve sakla (Her frame çarpma yapmamak için)
+                _cachedGroundVelocity = direction * speed;
+                _isInitialized = true;
+            }
+        }
+
+        private void ApplyMovement()
+        {
+            // [OPTIMIZATION] Yerçekimini korumak için Y hızını rigidbody'den alıyoruz.
+            // X ve Z hızını ise önceden hesaplanmış cache'den çekiyoruz.
+            
+            Vector3 currentVelocity;
+            
             #if UNITY_6000_0_OR_NEWER
-            _moveVelocity.y = _rb.linearVelocity.y;
-            _rb.linearVelocity = _moveVelocity;
+            currentVelocity.x = _cachedGroundVelocity.x;
+            currentVelocity.y = _rb.linearVelocity.y; // Yerçekimi etkisi
+            currentVelocity.z = _cachedGroundVelocity.z;
+            _rb.linearVelocity = currentVelocity;
             #else
-            _moveVelocity.y = _rb.velocity.y;
-            _rb.velocity = _moveVelocity;
+            currentVelocity.x = _cachedGroundVelocity.x;
+            currentVelocity.y = _rb.velocity.y; // Yerçekimi etkisi
+            currentVelocity.z = _cachedGroundVelocity.z;
+            _rb.velocity = currentVelocity;
             #endif
         }
     }

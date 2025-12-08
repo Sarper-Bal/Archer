@@ -6741,6 +6741,54 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!1 &2049643156
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2049643158}
+  - component: {fileID: 2049643157}
+  m_Layer: 0
+  m_Name: Player Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2049643157
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2049643156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93a04fb94459347809e1d116f22c7d1f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Spawners.ManualTouchSpawner
+  _unitData: {fileID: 11400000, guid: d524fd4a481154c098b6b397945dc001, type: 2}
+  _spawnPoint: {fileID: 0}
+  _spawnInterval: 0.1
+  _moveDirection: {x: 0, y: 0, z: 1}
+--- !u!4 &2049643158
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2049643156}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 1.31}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2105700183
 GameObject:
   m_ObjectHideFlags: 0
@@ -8950,6 +8998,7 @@ SceneRoots:
   - {fileID: 527054902}
   - {fileID: 16072524}
   - {fileID: 1297205996}
+  - {fileID: 2049643158}
   - {fileID: 2105700184}
   - {fileID: 167863750181744629}
   - {fileID: 959438958}
