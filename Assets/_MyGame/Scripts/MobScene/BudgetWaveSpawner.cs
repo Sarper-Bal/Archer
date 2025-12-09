@@ -6,6 +6,10 @@ using IndianOceanAssets.Engine2_5D.Managers;
 
 namespace IndianOceanAssets.Engine2_5D.Spawners
 {
+    /// <summary>
+    /// [TR] Bütçe hesaplayıp düşman spawn eden ve bunları entegre havuz sistemiyle yöneten sınıf.
+    /// [EN] Class that spawns enemies based on budget and manages them with an integrated pooling system.
+    /// </summary>
     public class BudgetWaveSpawner : MonoBehaviour
     {
         [System.Serializable]
@@ -14,10 +18,7 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             public string WaveName;
             public EnemyDefinition EnemyType; 
             public float BaseBudget;          
-            
-            [Tooltip("BOŞ BIRAKIRSAN: Sahnedeki tüm aktif kapılardan eşit dağıtarak çıkar.\nBİR ID YAZARSAN: Sadece o ID'ye sahip kapılardan çıkar (Örn: 'SolKapi').")]
-            public string OptionalFilterID;   // [GÜNCELLEME] Artık opsiyonel filtre
-            
+            public string OptionalFilterID;   
             public float SpawnInterval;       
             public float DelayBeforeWave;     
         }
@@ -25,19 +26,20 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
         [Header("🌊 Akıllı Dalga Ayarları")]
         [SerializeField] private List<BudgetWave> _waves;
         
-        // Sahnedeki noktaları takip eden listeler
+        // --- POOLING SİSTEMİ (Değişkenler) ---
+        // Her düşman türü (isim bazlı) için ayrı bir kuyruk tutuyoruz.
+        private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
+        
+        // Sahne takibi
         private Dictionary<string, List<BattleSpawnPoint>> _spawnPointsMap = new Dictionary<string, List<BattleSpawnPoint>>();
         private List<BattleSpawnPoint> _allSpawnPoints = new List<BattleSpawnPoint>();
 
         private void Start()
         {
-            RefreshSpawnPoints(); // Başlangıçta kapıları bul
+            RefreshSpawnPoints();
             StartCoroutine(WaveRoutine());
         }
 
-        /// <summary>
-        /// Sahnedeki BattleSpawnPoint'leri bulur ve hafızaya alır.
-        /// </summary>
         public void RefreshSpawnPoints()
         {
             _spawnPointsMap.Clear();
@@ -46,7 +48,6 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             var points = FindObjectsOfType<BattleSpawnPoint>();
             foreach (var point in points)
             {
-                // Sadece aktif objeleri listeye al
                 if (!point.gameObject.activeInHierarchy) continue;
 
                 _allSpawnPoints.Add(point);
@@ -65,33 +66,29 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             {
                 if (wave.DelayBeforeWave > 0) yield return new WaitForSeconds(wave.DelayBeforeWave);
 
-                // --- 1. BÜTÇE HESABI ---
                 float difficulty = BattleDifficultyManager.Instance != null ? BattleDifficultyManager.Instance.CurrentMultiplier : 1.0f;
                 float totalBudget = wave.BaseBudget * difficulty;
-                
                 float enemyCost = wave.EnemyType.ThreatScore > 0 ? wave.EnemyType.ThreatScore : 1f;
+                
                 int countToSpawn = Mathf.RoundToInt(totalBudget / enemyCost);
                 if (countToSpawn < 1 && totalBudget > 0) countToSpawn = 1;
 
-                // --- 2. HEDEF KAPILARI BELİRLE ---
                 List<BattleSpawnPoint> activeTargets = GetActiveTargets(wave.OptionalFilterID);
 
                 if (activeTargets.Count == 0)
                 {
-                    Debug.LogWarning($"⚠️ Wave '{wave.WaveName}' için aktif spawn noktası bulunamadı! Atlanıyor.");
+                    Debug.LogWarning($"⚠️ Wave '{wave.WaveName}' için aktif spawn noktası yok!");
                     continue;
                 }
 
-                Debug.Log($"⚔️ Wave: {wave.WaveName} | Adet: {countToSpawn} | Aktif Kapı: {activeTargets.Count}");
+                // Debug.Log($"⚔️ Wave: {wave.WaveName} | Adet: {countToSpawn}");
 
-                // --- 3. DAĞITIMLI SPAWN (SMART DISTRIBUTION) ---
                 for (int i = 0; i < countToSpawn; i++)
                 {
-                    // [MATEMATİK] Modulo (%) operatörü ile kapıları sırayla gez (0, 1, 2, 0, 1, 2...)
                     int targetIndex = i % activeTargets.Count;
                     BattleSpawnPoint selectedPoint = activeTargets[targetIndex];
 
-                    // Seçilen noktadan spawn et
+                    // Pool üzerinden spawn et
                     SpawnSingleEnemy(wave.EnemyType, selectedPoint);
                     
                     if (wave.SpawnInterval > 0) yield return new WaitForSeconds(wave.SpawnInterval);
@@ -99,47 +96,107 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             }
         }
 
-        /// <summary>
-        /// Filtreye göre veya genel havuzdan AKTİF olan noktaları döndürür.
-        /// </summary>
         private List<BattleSpawnPoint> GetActiveTargets(string filterID)
         {
             List<BattleSpawnPoint> candidates;
-
-            // Filtre var mı?
             if (!string.IsNullOrEmpty(filterID) && _spawnPointsMap.ContainsKey(filterID))
             {
                 candidates = _spawnPointsMap[filterID];
             }
             else
             {
-                // Filtre yoksa hepsini al
                 candidates = _allSpawnPoints;
             }
-
-            // [GÜVENLİK] Listenin içindeki objeler yok olmuş veya kapanmış olabilir, temizle.
-            // Bu basit LINQ sorgusu null olmayan ve aktif olanları filtreler.
             return candidates.FindAll(x => x != null && x.gameObject.activeInHierarchy);
         }
 
+        // --- POOL MANTIĞI BURADA ---
         private void SpawnSingleEnemy(EnemyDefinition data, BattleSpawnPoint targetPoint)
         {
-            if (targetPoint == null) return;
+            if (targetPoint == null || data.EnemyPrefab == null) return;
 
-            // Instantiate (Veya ilerde Pool)
-            GameObject obj = Instantiate(data.EnemyPrefab, targetPoint.transform.position, targetPoint.transform.rotation);
+            // 1. Havuzdan bir obje çek
+            EnemyBehaviorController enemy = GetFromPool(data);
             
-            var controller = obj.GetComponent<EnemyBehaviorController>();
-            var stats = obj.GetComponent<EnemyStats>();
+            // 2. Pozisyon ve Rotasyon ata
+            enemy.transform.position = targetPoint.transform.position;
+            enemy.transform.rotation = targetPoint.transform.rotation; // Kapının yönüne dönsün
 
-            if (stats != null) stats.InitializeRuntime(data);
+            // 3. Verileri sıfırla ve başlat
+            var stats = enemy.GetComponent<EnemyStats>();
+            if (stats != null) stats.InitializeRuntime(data); // Canı fullenir, hızı ayarlanır
 
-            if (controller != null)
+            var health = enemy.GetComponent<Health>();
+            if (health != null) health.ResetHealth(); // Ölü ise canlan
+
+            // 4. Davranışı ayarla
+            enemy.gameObject.SetActive(true);
+            enemy.SetBehavior(EnemyBehaviorType.Directional);
+        }
+
+        /// <summary>
+        /// Havuzdan obje çeker, yoksa yenisini üretir.
+        /// </summary>
+        private EnemyBehaviorController GetFromPool(EnemyDefinition data)
+        {
+            string key = data.name; // Prefab/Data adını anahtar olarak kullanıyoruz
+
+            // Eğer bu tip için havuz listesi yoksa oluştur
+            if (!_poolDictionary.ContainsKey(key))
             {
-                obj.SetActive(true);
-                controller.SetBehavior(EnemyBehaviorType.Directional);
-                // Düşmanın yönünü kapının baktığı yöne çevir
-                obj.transform.rotation = targetPoint.transform.rotation;
+                _poolDictionary[key] = new Queue<EnemyBehaviorController>();
+            }
+
+            // Havuzda bekleyen eleman var mı?
+            if (_poolDictionary[key].Count > 0)
+            {
+                EnemyBehaviorController pooledObj = _poolDictionary[key].Dequeue();
+                
+                // Güvenlik: Obje sahnede yanlışlıkla silinmiş olabilir mi?
+                if (pooledObj != null)
+                {
+                    // Geri dönüş biletini yenile (Callback)
+                    pooledObj.OnReturnToPool = ReturnEnemyToPool;
+                    return pooledObj;
+                }
+            }
+
+            // Havuz boşsa yeni yarat (Instantiate)
+            GameObject newObj = Instantiate(data.EnemyPrefab, transform); // Spawner'ın altında toplu dursunlar
+            var controller = newObj.GetComponent<EnemyBehaviorController>();
+            
+            // Bileti ver: "İşin bitince bu metoda dön"
+            controller.OnReturnToPool = ReturnEnemyToPool;
+            
+            newObj.SetActive(false); // Başlangıçta pasif
+            return controller;
+        }
+
+        /// <summary>
+        /// Düşman öldüğünde veya işi bittiğinde buraya geri döner.
+        /// </summary>
+        private void ReturnEnemyToPool(EnemyBehaviorController enemy)
+        {
+            // Obje zaten yoksa veya oyun kapanıyorsa uğraşma
+            if (enemy == null || gameObject == null) return;
+
+            enemy.gameObject.SetActive(false);
+            
+            // Hangi listeye ait olduğunu bulmak için Stats'a bakıyoruz
+            var stats = enemy.GetComponent<EnemyStats>();
+            if (stats != null && stats.Definition != null)
+            {
+                string key = stats.Definition.name;
+                
+                if (!_poolDictionary.ContainsKey(key))
+                    _poolDictionary[key] = new Queue<EnemyBehaviorController>();
+
+                _poolDictionary[key].Enqueue(enemy);
+            }
+            else
+            {
+                // Verisi kayıpsa (Hata durumu) yok et gitsin
+                Destroy(enemy.gameObject);
             }
         }
     }

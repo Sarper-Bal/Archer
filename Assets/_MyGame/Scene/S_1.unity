@@ -5212,8 +5212,8 @@ MonoBehaviour:
   - WaveName: 
     EnemyType: {fileID: 11400000, guid: 57098172a52c141d09ba73f0a3880861, type: 2}
     BaseBudget: 100
-    TargetSpawnPointID: Gate1
-    SpawnInterval: 0.1
+    OptionalFilterID: 
+    SpawnInterval: 0.5
     DelayBeforeWave: 0
 --- !u!114 &1425858710
 MonoBehaviour:
