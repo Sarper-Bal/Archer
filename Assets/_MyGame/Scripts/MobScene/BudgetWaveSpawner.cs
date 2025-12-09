@@ -1,50 +1,54 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using IndianOceanAssets.Engine2_5D; // EnemyDefinition ve Controller için
-using IndianOceanAssets.Engine2_5D.Managers; // DifficultyManager için
+using IndianOceanAssets.Engine2_5D; 
+using IndianOceanAssets.Engine2_5D.Managers;
 
 namespace IndianOceanAssets.Engine2_5D.Spawners
 {
-    /// <summary>
-    /// [TR] Verilen puan bütçesine göre düşman sayısını hesaplayıp spawn eden sistem.
-    /// [EN] System that calculates enemy count based on budget and spawns them.
-    /// </summary>
     public class BudgetWaveSpawner : MonoBehaviour
     {
-        // Inspector'da dalga tasarlamak için basit yapı
         [System.Serializable]
         public struct BudgetWave
         {
             public string WaveName;
-            public EnemyDefinition EnemyType; // Hangi düşman?
-            public float BaseBudget;          // Kaç puanlık? (Örn: 100)
-            public string TargetSpawnPointID; // Hangi kapıdan? (Boş bırakılırsa rastgele)
-            public float SpawnInterval;       // Pıtır pıtır çıkma hızı
-            public float DelayBeforeWave;     // Başlamadan önceki bekleme
+            public EnemyDefinition EnemyType; 
+            public float BaseBudget;          
+            
+            [Tooltip("BOŞ BIRAKIRSAN: Sahnedeki tüm aktif kapılardan eşit dağıtarak çıkar.\nBİR ID YAZARSAN: Sadece o ID'ye sahip kapılardan çıkar (Örn: 'SolKapi').")]
+            public string OptionalFilterID;   // [GÜNCELLEME] Artık opsiyonel filtre
+            
+            public float SpawnInterval;       
+            public float DelayBeforeWave;     
         }
 
-        [Header("🌊 Dalga Ayarları")]
+        [Header("🌊 Akıllı Dalga Ayarları")]
         [SerializeField] private List<BudgetWave> _waves;
         
-        // Sahnedeki spawn noktalarını tutan sözlük
+        // Sahnedeki noktaları takip eden listeler
         private Dictionary<string, List<BattleSpawnPoint>> _spawnPointsMap = new Dictionary<string, List<BattleSpawnPoint>>();
         private List<BattleSpawnPoint> _allSpawnPoints = new List<BattleSpawnPoint>();
 
         private void Start()
         {
-            // 1. Sahnedeki tüm spawn noktalarını bul ve kaydet
-            RegisterSpawnPoints();
-
-            // 2. Dalga döngüsünü başlat
+            RefreshSpawnPoints(); // Başlangıçta kapıları bul
             StartCoroutine(WaveRoutine());
         }
 
-        private void RegisterSpawnPoints()
+        /// <summary>
+        /// Sahnedeki BattleSpawnPoint'leri bulur ve hafızaya alır.
+        /// </summary>
+        public void RefreshSpawnPoints()
         {
+            _spawnPointsMap.Clear();
+            _allSpawnPoints.Clear();
+
             var points = FindObjectsOfType<BattleSpawnPoint>();
             foreach (var point in points)
             {
+                // Sadece aktif objeleri listeye al
+                if (!point.gameObject.activeInHierarchy) continue;
+
                 _allSpawnPoints.Add(point);
 
                 if (!_spawnPointsMap.ContainsKey(point.PointID))
@@ -59,92 +63,84 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
         {
             foreach (var wave in _waves)
             {
-                // Bekleme süresi
                 if (wave.DelayBeforeWave > 0) yield return new WaitForSeconds(wave.DelayBeforeWave);
 
-                // --- HESAPLAMA ANI ---
-                float difficulty = 1.0f;
-                if (BattleDifficultyManager.Instance != null)
-                {
-                    difficulty = BattleDifficultyManager.Instance.CurrentMultiplier;
-                }
-
-                // 1. Formül: Bütçe * Zorluk
+                // --- 1. BÜTÇE HESABI ---
+                float difficulty = BattleDifficultyManager.Instance != null ? BattleDifficultyManager.Instance.CurrentMultiplier : 1.0f;
                 float totalBudget = wave.BaseBudget * difficulty;
-
-                // 2. Düşman Maliyeti (Threat Score)
-                float enemyCost = wave.EnemyType.ThreatScore;
-                if (enemyCost <= 0) enemyCost = 1; // Sıfıra bölünme hatası önlemi
-
-                // 3. Adet Hesapla (Option 2: Yakına Yuvarla)
-                int countToSpawn = Mathf.RoundToInt(totalBudget / enemyCost);
                 
-                // En az 1 tane spawn olsun (eğer bütçe çok düşükse bile)
+                float enemyCost = wave.EnemyType.ThreatScore > 0 ? wave.EnemyType.ThreatScore : 1f;
+                int countToSpawn = Mathf.RoundToInt(totalBudget / enemyCost);
                 if (countToSpawn < 1 && totalBudget > 0) countToSpawn = 1;
 
-                Debug.Log($"⚔️ Wave: {wave.WaveName} | Bütçe: {totalBudget} | Adet: {countToSpawn}");
+                // --- 2. HEDEF KAPILARI BELİRLE ---
+                List<BattleSpawnPoint> activeTargets = GetActiveTargets(wave.OptionalFilterID);
 
-                // --- SPAWN İŞLEMİ ---
+                if (activeTargets.Count == 0)
+                {
+                    Debug.LogWarning($"⚠️ Wave '{wave.WaveName}' için aktif spawn noktası bulunamadı! Atlanıyor.");
+                    continue;
+                }
+
+                Debug.Log($"⚔️ Wave: {wave.WaveName} | Adet: {countToSpawn} | Aktif Kapı: {activeTargets.Count}");
+
+                // --- 3. DAĞITIMLI SPAWN (SMART DISTRIBUTION) ---
                 for (int i = 0; i < countToSpawn; i++)
                 {
-                    SpawnSingleEnemy(wave.EnemyType, wave.TargetSpawnPointID);
+                    // [MATEMATİK] Modulo (%) operatörü ile kapıları sırayla gez (0, 1, 2, 0, 1, 2...)
+                    int targetIndex = i % activeTargets.Count;
+                    BattleSpawnPoint selectedPoint = activeTargets[targetIndex];
+
+                    // Seçilen noktadan spawn et
+                    SpawnSingleEnemy(wave.EnemyType, selectedPoint);
                     
-                    // Aralıklarla spawn et (Interval)
                     if (wave.SpawnInterval > 0) yield return new WaitForSeconds(wave.SpawnInterval);
                 }
             }
         }
 
-        private void SpawnSingleEnemy(EnemyDefinition data, string pointID)
+        /// <summary>
+        /// Filtreye göre veya genel havuzdan AKTİF olan noktaları döndürür.
+        /// </summary>
+        private List<BattleSpawnPoint> GetActiveTargets(string filterID)
         {
-            // Hedef noktayı bul
-            BattleSpawnPoint targetPoint = GetSpawnPoint(pointID);
+            List<BattleSpawnPoint> candidates;
+
+            // Filtre var mı?
+            if (!string.IsNullOrEmpty(filterID) && _spawnPointsMap.ContainsKey(filterID))
+            {
+                candidates = _spawnPointsMap[filterID];
+            }
+            else
+            {
+                // Filtre yoksa hepsini al
+                candidates = _allSpawnPoints;
+            }
+
+            // [GÜVENLİK] Listenin içindeki objeler yok olmuş veya kapanmış olabilir, temizle.
+            // Bu basit LINQ sorgusu null olmayan ve aktif olanları filtreler.
+            return candidates.FindAll(x => x != null && x.gameObject.activeInHierarchy);
+        }
+
+        private void SpawnSingleEnemy(EnemyDefinition data, BattleSpawnPoint targetPoint)
+        {
             if (targetPoint == null) return;
 
-            // --- Basit Instantiate (Pooling daha sonra entegre edilebilir) ---
-            // Not: Senin projende Pool sistemi var, burayı ona bağlayabiliriz. 
-            // Şimdilik mantığı göstermek için Instantiate kullanıyorum.
+            // Instantiate (Veya ilerde Pool)
             GameObject obj = Instantiate(data.EnemyPrefab, targetPoint.transform.position, targetPoint.transform.rotation);
             
-            // Gerekli bileşenleri al
             var controller = obj.GetComponent<EnemyBehaviorController>();
             var stats = obj.GetComponent<EnemyStats>();
 
-            // Datayı yükle
             if (stats != null) stats.InitializeRuntime(data);
 
-            // [KRİTİK] Düşmanı kapının baktığı yöne (Sana doğru) yolla
             if (controller != null)
             {
                 obj.SetActive(true);
-                // Directional moda zorla
                 controller.SetBehavior(EnemyBehaviorType.Directional);
-                
-                // Directional Mover'ın yönünü kapının yönü olarak ayarla (Burası önemli!)
-                // Bu kısım DirectionalEnemyMover'ın yeni koduna uyumludur (transform.forward kullanır)
+                // Düşmanın yönünü kapının baktığı yöne çevir
                 obj.transform.rotation = targetPoint.transform.rotation;
             }
-        }
-
-        private BattleSpawnPoint GetSpawnPoint(string id)
-        {
-            // Eğer ID boşsa rastgele bir nokta seç
-            if (string.IsNullOrEmpty(id))
-            {
-                if (_allSpawnPoints.Count > 0) 
-                    return _allSpawnPoints[Random.Range(0, _allSpawnPoints.Count)];
-                return null;
-            }
-
-            // ID'ye uygun listeden birini seç
-            if (_spawnPointsMap.ContainsKey(id))
-            {
-                var list = _spawnPointsMap[id];
-                return list[Random.Range(0, list.Count)];
-            }
-
-            Debug.LogWarning($"⚠️ Spawn Point ID bulunamadı: {id}");
-            return null;
         }
     }
 }
