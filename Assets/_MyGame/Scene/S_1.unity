@@ -477,8 +477,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 1.01, z: -6.14}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 2049643158}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -5192,7 +5192,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   m_LookAt: {fileID: 0}
-  m_Follow: {fileID: 2049643158}
+  m_Follow: {fileID: 0}
   m_Lens:
     FieldOfView: 45
     OrthographicSize: 5
@@ -6895,8 +6895,9 @@ GameObject:
   m_Component:
   - component: {fileID: 2049643158}
   - component: {fileID: 2049643157}
+  - component: {fileID: 2049643159}
   m_Layer: 0
-  m_Name: Player Spawner
+  m_Name: Player Spawner(Cannon)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6909,7 +6910,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2049643156}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 93a04fb94459347809e1d116f22c7d1f, type: 3}
   m_Name: 
@@ -6919,7 +6920,7 @@ MonoBehaviour:
   _spawnPoint: {fileID: 238190256}
   _spawnInterval: 0.1
   _moveSpeed: 15
-  _xLimit: 10
+  _xLimit: 3
   _moveDirection: {x: 0, y: 0, z: 1}
 --- !u!4 &2049643158
 Transform:
@@ -6932,12 +6933,28 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 5.25, y: 0, z: 1.31}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 50626202}
   - {fileID: 238190256}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2049643159
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2049643156}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 522d538b346a44dceaa32015371b3584, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Controller.PlayerCannonController
+  _inputChannel: {fileID: 11400000, guid: 186cb73745b502c4184d865f9d06ec29, type: 2}
+  _defaultWeapon: {fileID: 11400000, guid: f6732bd2b9c6f4154b8a5f9c48287c7a, type: 2}
+  _firePoint: {fileID: 238190256}
+  _visualRoot: {fileID: 50626202}
 --- !u!1 &2105700183
 GameObject:
   m_ObjectHideFlags: 0
