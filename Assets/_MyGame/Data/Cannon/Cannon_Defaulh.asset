@@ -17,4 +17,4 @@ MonoBehaviour:
   ProjectilesPerShot: 1
   SpreadAngle: 10
   SwerveSpeed: 10
-  MaxSwerveOffset: 1.5
+  MaxSwerveOffset: 2
