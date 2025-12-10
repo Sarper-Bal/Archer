@@ -2,8 +2,8 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using IndianOceanAssets.Engine2_5D; 
-using ArcadeBridge.ArcadeIdleEngine.Storage; // Inventory ve Item için
-using ArcadeBridge.ArcadeIdleEngine.Controller; // PlayerCannonController için
+using ArcadeBridge.ArcadeIdleEngine.Storage; 
+using ArcadeBridge.ArcadeIdleEngine.Controller; 
 
 namespace IndianOceanAssets.Engine2_5D.Spawners
 {
@@ -26,7 +26,6 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
         }
 
         [Header("🎒 Sistem")]
-        // [DÜZELTME 1] Türü 'InventoryVisible' değil 'Inventory' yaptık.
         [SerializeField] private Inventory _playerInventory;
         [SerializeField] private bool _autoFindPlayer = true;
 
@@ -42,6 +41,7 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
 
         private void Start()
         {
+            // Oyuncuyu ve çantasını otomatik bul
             if (_autoFindPlayer)
             {
                 FindPlayerInventory();
@@ -57,41 +57,42 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             }
         }
 
-        // [DÜZELTME 2] En doğru envanteri bulma algoritması
+        // [FINAL] En kararlı oyuncu bulma algoritması
         private void FindPlayerInventory()
         {
-            // Adım 1: Gerçek kontrolcüyü (Hareket eden objeyi) bul
+            // 1. Önce aktif kontrolcüyü bul (En güvenli yöntem)
             var realPlayerController = FindObjectOfType<PlayerCannonController>();
             
             if (realPlayerController != null)
             {
-                // Önce kontrolcünün olduğu objeye bak (En garantisi budur)
+                // Çantayı; objenin kendisinde, çocuklarında veya ebeveyninde ara
                 _playerInventory = realPlayerController.GetComponent<Inventory>();
-
-                // Eğer orada yoksa, hemen altındaki çocuklara bak (Visuals içinde olabilir)
+                
                 if (_playerInventory == null)
                     _playerInventory = realPlayerController.GetComponentInChildren<Inventory>();
-
-                // Eğer hala yoksa, Ebeveynine bak (Bazen Root'ta olur)
+                
                 if (_playerInventory == null)
                     _playerInventory = realPlayerController.GetComponentInParent<Inventory>();
 
                 if (_playerInventory != null)
                 {
-                    Debug.Log($"✅ Spawner: Gerçek Envanter bulundu: {_playerInventory.name}");
+                    // Debug.Log($"✅ Spawner: Gerçek Envanter kilitlendi: {_playerInventory.name}");
                     return;
                 }
             }
 
-            // Eğer kontrolcü yoksa (Test sahnesi vb.) Tag ile dene
+            // 2. Kontrolcü yoksa Tag ile şansını dene
             if (_playerInventory == null)
             {
                 GameObject tagObj = GameObject.FindGameObjectWithTag("Player");
                 if (tagObj != null) _playerInventory = tagObj.GetComponentInChildren<Inventory>();
             }
 
-            // Bulamazsa tekrar dene
-            if (_playerInventory == null) StartCoroutine(RetryFindPlayer());
+            // 3. Hala yoksa biraz bekle ve tekrar dene (Oyuncu geç doğuyor olabilir)
+            if (_playerInventory == null) 
+            {
+                StartCoroutine(RetryFindPlayer());
+            }
         }
 
         private IEnumerator RetryFindPlayer()
@@ -148,11 +149,12 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             enemy.InitializeEnemy(wave.EnemyType);
             wave.ActiveEnemies++;
 
+            // Düşman ölünce çalışacak Callback
             enemy.OnReturnToPool = (deadEnemy) => 
             {
                 if (_isApplicationQuitting) return;
 
-                // Referans kontrolü (Kaybolduysa tekrar bul)
+                // Referans kontrolü: Çanta bağlantısı koptuysa (sahne değişimi vb.) tekrar bağla
                 if (_playerInventory == null && _autoFindPlayer) FindPlayerInventory();
 
                 TryDropLoot(deadEnemy, wave.EnemyType);
@@ -165,19 +167,23 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
 
         private void TryDropLoot(EnemyBehaviorController enemy, EnemyDefinition data)
         {
+            // Güvenlik kontrolleri
             if (_isApplicationQuitting || _playerInventory == null || data.DropItem == null) return;
             
-            // [DÜZELTME 3] Inventory sınıfının kendi CanAdd kontrolünü kullan
+            // Çantada yer var mı? (Inventory sınıfının kendi yeteneğini kullanıyoruz)
             if (!_playerInventory.CanAdd(data.DropItem)) return;
 
+            // Eşyayı yarat
             var item = data.DropItem.Pool.Get();
             if (item != null)
             {
                 item.transform.position = enemy.transform.position;
                 item.gameObject.SetActive(true);
+                
+                // Hiyerarşiden kopar (Önemli!)
                 item.transform.SetParent(null); 
                 
-                // [DÜZELTME 4] Inventory.Add metodu, Visible/Invisible ayrımını kendi yapar
+                // Çantaya ekle (Animasyon ve mantığı Inventory halleder)
                 _playerInventory.Add(item);
             }
         }
