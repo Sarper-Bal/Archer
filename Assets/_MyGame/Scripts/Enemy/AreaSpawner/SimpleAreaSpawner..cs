@@ -1,33 +1,44 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using IndianOceanAssets.Engine2_5D; // EnemyDefinition ve Controller için
+using IndianOceanAssets.Engine2_5D; 
 
 namespace IndianOceanAssets.Engine2_5D.Spawners
 {
-    /// <summary>
-    /// [TR] Her düşman türü için özel sayı ve hız ayarı yapılabilen gelişmiş alan spawner'ı.
-    /// [EN] Advanced area spawner allowing individual count and speed settings for each enemy type.
-    /// </summary>
     public class SimpleAreaSpawner : MonoBehaviour
     {
+        // --- AYARLAR VE DATA ---
         [System.Serializable]
-        public struct SpawnWaveSettings
+        public class SpawnWaveSettings
         {
             [Header("Kim Doğacak?")]
-            public string Name; // Editörde karışıklığı önlemek için (Örn: "Hızlı Goblinler")
+            public string Name; 
             public EnemyDefinition EnemyType;
 
             [Header("Nasıl Doğacak?")]
-            [Tooltip("Toplam kaç adet? (-1 yaparsan sonsuz doğar)")]
-            public int SpawnCount;
+            [Tooltip("Toplam kaç adet doğacak?")]
+            public int SpawnCount = 5;
 
             [Tooltip("Kaç saniyede bir doğsun?")]
-            public float SpawnInterval;
+            public float SpawnInterval = 1f;
 
-            [Tooltip("Oyun başladıktan kaç saniye sonra doğmaya başlasın?")]
-            public float StartDelay;
+            [Tooltip("Dalga başlamadan önce (veya tekrar etmeden önce) kaç saniye beklensin?")]
+            public float StartDelay = 2f;
+
+            [Header("🔴 Canlı Takip (Değiştirme)")]
+            [Tooltip("Şu an sahnede canlı olan düşman sayısı.")]
+            public int ActiveEnemies = 0;
+            
+            [Tooltip("Bu gruptan toplam kaç düşman öldürüldü?")]
+            public int KillCount = 0;
+            
+            [Tooltip("Şu anki durumu gösterir.")]
+            public string CurrentStatus = "Waiting";
         }
+
+        [Header("📊 Genel İstatistikler")]
+        [Tooltip("Tüm gruplardan toplam öldürülen düşman sayısı.")]
+        [SerializeField] private int _totalGlobalKills = 0;
 
         [Header("📋 Spawn Ayarları")]
         [Tooltip("Buraya istediğin kadar farklı düşman kuralı ekleyebilirsin.")]
@@ -36,59 +47,90 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
         [Header("📏 Alan Ayarları")]
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
 
-        // --- OPTİMİZE POOL (HAVUZ) SİSTEMİ ---
+        // --- POOL SİSTEMİ ---
         private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
 
         private void Start()
         {
-            // Listendeki her bir kural için ayrı bir üretim döngüsü başlat
             if (_spawnList != null)
             {
+                // Her ayar grubu için ayrı bir "Yönetici Coroutine" başlat
                 foreach (var settings in _spawnList)
                 {
                     if (settings.EnemyType != null)
                     {
-                        StartCoroutine(ProcessSpawnSettings(settings));
+                        StartCoroutine(ProcessWaveLoop(settings));
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Her düşman ayarı için bağımsız çalışan döngü.
+        /// [YENİ] Sonsuz döngü mantığı: Bekle -> Doğur -> Ölmesini Bekle -> Başa Dön
         /// </summary>
-        private IEnumerator ProcessSpawnSettings(SpawnWaveSettings settings)
+        private IEnumerator ProcessWaveLoop(SpawnWaveSettings wave)
         {
-            // 1. Başlangıç gecikmesi (Örn: Devler 10sn sonra gelsin)
-            if (settings.StartDelay > 0) 
-                yield return new WaitForSeconds(settings.StartDelay);
-
-            int spawnedCount = 0;
-            var waitInterval = new WaitForSeconds(settings.SpawnInterval);
-
-            // 2. Üretim Döngüsü (-1 ise sonsuz, değilse sayıya kadar)
-            while (settings.SpawnCount == -1 || spawnedCount < settings.SpawnCount)
+            // Sonsuz döngü
+            while (true)
             {
-                SpawnSingleEnemy(settings.EnemyType);
-                spawnedCount++;
+                // 1. Bekleme Aşaması
+                wave.CurrentStatus = $"Waiting ({wave.StartDelay}s)...";
+                yield return new WaitForSeconds(wave.StartDelay);
 
-                yield return waitInterval;
+                // 2. Doğurma Aşaması
+                wave.CurrentStatus = "Spawning...";
+                int spawnedCount = 0;
+                var waitInterval = new WaitForSeconds(wave.SpawnInterval);
+
+                while (spawnedCount < wave.SpawnCount)
+                {
+                    SpawnEnemyForWave(wave);
+                    spawnedCount++;
+                    yield return waitInterval;
+                }
+
+                // 3. Savaş Aşaması (Hepsi ölene kadar bekle)
+                wave.CurrentStatus = "Battle in Progress...";
+                
+                // ActiveEnemies 0 olana kadar her frame bekle
+                while (wave.ActiveEnemies > 0)
+                {
+                    yield return null; 
+                }
+
+                // 4. Bitiş ve Tekrar
+                wave.CurrentStatus = "Wave Cleared! Restarting...";
+                // Döngü başa döner ve tekrar StartDelay kadar bekler
             }
         }
 
-        private void SpawnSingleEnemy(EnemyDefinition data)
+        private void SpawnEnemyForWave(SpawnWaveSettings wave)
         {
-            // Havuzdan veya yeni üretimle objeyi al
-            EnemyBehaviorController enemy = GetFromPool(data);
+            EnemyBehaviorController enemy = GetFromPool(wave.EnemyType);
             if (enemy == null) return;
 
-            // Rastgele konum belirle
+            // Rastgele konum
             Vector3 randomPos = GetRandomPosition();
             enemy.transform.position = randomPos;
-            enemy.transform.rotation = Quaternion.identity; 
+            enemy.transform.rotation = Quaternion.identity;
 
-            // Düşmanı başlat (Canı, Hızı vb. yüklenir)
-            enemy.InitializeEnemy(data);
+            // Düşmanı başlat
+            enemy.InitializeEnemy(wave.EnemyType);
+
+            // [SAYAÇ GÜNCELLEME]
+            wave.ActiveEnemies++;
+
+            // [ÖZEL CALLBACK] Düşman öldüğünde bu fonksiyon çalışacak
+            enemy.OnReturnToPool = (deadEnemy) => 
+            {
+                // 1. Standart havuz işlemi (Objeyi kapat ve sakla)
+                ReturnToPool(deadEnemy);
+
+                // 2. Sayaçları güncelle
+                wave.ActiveEnemies--;
+                wave.KillCount++;
+                _totalGlobalKills++; // Genel sayacı artır
+            };
         }
 
         private Vector3 GetRandomPosition()
@@ -102,29 +144,19 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
         private EnemyBehaviorController GetFromPool(EnemyDefinition data)
         {
             if (data == null || data.EnemyPrefab == null) return null;
-
             string key = data.name;
 
             if (!_poolDictionary.ContainsKey(key))
                 _poolDictionary[key] = new Queue<EnemyBehaviorController>();
 
-            // Havuzda varsa çek
             if (_poolDictionary[key].Count > 0)
             {
                 EnemyBehaviorController pooled = _poolDictionary[key].Dequeue();
-                if (pooled != null)
-                {
-                    pooled.OnReturnToPool = ReturnToPool;
-                    return pooled;
-                }
+                if (pooled != null) return pooled;
             }
 
-            // Yoksa yeni yarat
             GameObject newObj = Instantiate(data.EnemyPrefab, transform);
             var controller = newObj.GetComponent<EnemyBehaviorController>();
-            
-            if (controller != null) controller.OnReturnToPool = ReturnToPool;
-            
             newObj.SetActive(false);
             return controller;
         }
