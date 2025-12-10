@@ -2,7 +2,7 @@ using UnityEngine;
 using System; 
 using System.Collections; 
 using ArcadeBridge.ArcadeIdleEngine.Pools;
-using ArcadeBridge.ArcadeIdleEngine.Storage; // [EKLENDI]
+using ArcadeBridge.ArcadeIdleEngine.Storage; 
 using IndianOceanAssets.Engine2_5D; 
 
 namespace ArcadeBridge.ArcadeIdleEngine.Tower
@@ -12,6 +12,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
         #region Konfigurasyon
         [Header("🎯 Hedef Ayarları")]
         [SerializeField] private LayerMask _enemyLayer; 
+
+        [Header("🏭 Fabrika Ayarları")]
+        [Tooltip("Eğer işaretliyse: Kulenin envanteri dolduğunda ateş etmeyi keser.")]
+        [SerializeField] private bool _stopOnFullInventory = true;
         #endregion
 
         public event Action OnFired;
@@ -22,7 +26,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
         private Transform _dynamicFirePoint;
         private Transform _dynamicRotatingPart;
         
-        // [YENİ] Kulenin kendi deposu
+        // Kulenin kendi deposu
         private Inventory _myInventory;
 
         private float _nextAttackTime;
@@ -34,7 +38,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
         private void Awake()
         {
-            // [YENİ] Kule üzerindeki envanteri bul (Depo)
+            // Kule üzerindeki envanteri bul
             _myInventory = GetComponent<Inventory>();
             if (_myInventory == null)
                 _myInventory = GetComponentInParent<Inventory>();
@@ -57,16 +61,29 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
 
         private void Update()
         {
-            if (_currentWeapon == null || _currentTarget == null) return;
+            if (_currentWeapon == null) return;
 
-            if (IsTargetInvalidOrOutOfRange())
+            // [YENİ ÖZELLİK] Depo Dolu Kontrolü
+            // Eğer ayar açıksa VE envanterimiz varsa VE envanter doluysa -> ÇALIŞMA!
+            if (_stopOnFullInventory && _myInventory != null && _myInventory.IsFull)
             {
+                // Depo dolu, hedefi sıfırla ki kule boşuna dönmesin (Idle dursun)
                 _currentTarget = null;
                 return;
             }
 
+            // Hedef Kontrolü
+            if (_currentTarget == null || IsTargetInvalidOrOutOfRange())
+            {
+                _currentTarget = null;
+                // Hedef yoksa Update'in geri kalanını çalıştırma
+                return;
+            }
+
+            // Hedefe Dön
             RotatePartToTarget();
 
+            // Ateş Et
             if (Time.time >= _nextAttackTime)
             {
                 Attack();
@@ -93,7 +110,14 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
         {
             while (true)
             {
-                if (_currentTarget == null) FindClosestEnemy();
+                // Depo doluysa hedef aramaya bile gerek yok (CPU Tasarrufu)
+                bool isInventoryFull = _stopOnFullInventory && _myInventory != null && _myInventory.IsFull;
+                
+                if (!isInventoryFull && _currentTarget == null) 
+                {
+                    FindClosestEnemy();
+                }
+                
                 yield return _searchWait;
             }
         }
@@ -162,7 +186,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Tower
                 projectile.transform.rotation = Quaternion.LookRotation(_currentTarget.position - spawnPos);
             }
             
-            // [GÜNCELLENDİ] Mermiye "Benim kasam (_myInventory) bu" bilgisini veriyoruz.
+            // Mermiye "Benim kasam bu" diyoruz
             projectile.Initialize(_currentTarget, _currentWeapon.ProjectilePool, _currentWeapon, _myInventory);
 
             OnFired?.Invoke();
