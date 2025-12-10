@@ -17,7 +17,7 @@ MonoBehaviour:
   MaxHealth: 1
   ContactDamage: 1
   ThreatScore: 10
-  _defaultBehavior: 1
+  _defaultBehavior: 2
   PatrolRouteID: {fileID: 11400000, guid: 2feae313691fd4cd5b2e3e832ea56c04, type: 2}
   FixedDirection: {x: 0, y: 0, z: 1}
   EnemyPrefab: {fileID: 8282702779294200114, guid: a46a321f89cff4d71a31c93136b6f640,

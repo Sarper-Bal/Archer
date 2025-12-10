@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Data.EnemyDatabase
   AllEnemies:
   - {fileID: 11400000, guid: 57098172a52c141d09ba73f0a3880861, type: 2}
-  - {fileID: 11400000, guid: 552672598014c46da97f48a0e13b1806, type: 2}
+  - {fileID: 11400000, guid: b9fedf986d8034eea945a9f85e508252, type: 2}

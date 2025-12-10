@@ -9,10 +9,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 {
     public class WaveSpawner : MonoBehaviour
     {
-        [Header("AI Bağlantısı")]
+        [Header("🧠 AI Bağlantısı")]
         [SerializeField] private SmartWaveManager _director;
         
-        [Header("Genel Ayarlar")]
+        [Header("⚙️ Genel Ayarlar")]
         [SerializeField] private float _timeBetweenWaves = 3f;
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
         
@@ -41,7 +41,6 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
         private void StopAndResetSpawner()
         {
             StopAllCoroutines(); 
-            Debug.Log("🛑 Spawner: Reset sinyali alındı, üretim iptal edildi.");
         }
 
         private IEnumerator StartFirstWaveRoutine()
@@ -67,15 +66,13 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             _director.GenerateNextWave(); 
             List<EnemyDefinition> enemiesToSpawn = _director.NextWaveEnemies;
             
-            if (enemiesToSpawn.Count == 0)
+            if (enemiesToSpawn == null || enemiesToSpawn.Count == 0)
             {
                 _director.OnWaveWon(); 
                 yield break;
             }
 
             OnWaveStarted?.Invoke(enemiesToSpawn.Count);
-
-            // [DÜZELTME] Manager'a "Savaş Başladı" haberini ver (Upgrade kutuları kapansın)
             _director.NotifyWaveStarted();
             _director.SetSpawningStatus(true);
 
@@ -89,6 +86,7 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             _director.SetSpawningStatus(false);
         }
 
+        // --- KRİTİK NOKTA ---
         private void SpawnEnemy(EnemyDefinition data)
         {
             EnemyBehaviorController enemy = GetFromPool(data);
@@ -96,12 +94,15 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
             Vector3 randomPos = GetRandomPosition();
             enemy.transform.position = randomPos;
-            enemy.transform.rotation = Quaternion.identity;
+            
+            // [DÜZELTME] Rotasyonu burada zorla 'Geriye' (Back) çevirmek yerine, 
+            // varsayılan (Identity) bırakıyoruz. Düşman kendi yapay zekasıyla dönsün.
+            enemy.transform.rotation = Quaternion.identity; 
 
-            var stats = enemy.GetComponent<EnemyStats>();
-            if (stats != null) stats.InitializeRuntime(data);
+            // [ÖNEMLİ] Burada "SetBehavior" gibi bir kod ASLA olmamalı.
+            // Sadece Initialize diyoruz, kararı EnemyBehaviorController veriyor.
+            enemy.InitializeEnemy(data);
 
-            enemy.gameObject.SetActive(true);
             _director.RegisterEnemy(enemy);
         }
         
@@ -113,7 +114,11 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             if (_poolDictionary[key].Count > 0)
             {
                 EnemyBehaviorController pooled = _poolDictionary[key].Dequeue();
-                if (pooled != null) { pooled.OnReturnToPool = ReturnEnemyToPool; return pooled; }
+                if (pooled != null) 
+                { 
+                    pooled.OnReturnToPool = ReturnEnemyToPool; 
+                    return pooled; 
+                }
             }
 
             if (data.EnemyPrefab == null) return null;
@@ -126,7 +131,9 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
 
         private void ReturnEnemyToPool(EnemyBehaviorController enemy)
         {
+            if (enemy == null) return;
             enemy.gameObject.SetActive(false);
+            
             var stats = enemy.GetComponent<EnemyStats>();
             if (stats != null && stats.Definition != null)
             {
@@ -142,6 +149,12 @@ namespace ArcadeBridge.ArcadeIdleEngine.Spawners
             float x = Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2);
             float z = Random.Range(-_spawnAreaSize.z / 2, _spawnAreaSize.z / 2);
             return transform.position + new Vector3(x, 0, z);
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireCube(transform.position, new Vector3(_spawnAreaSize.x, 1, _spawnAreaSize.z));
         }
     }
 }

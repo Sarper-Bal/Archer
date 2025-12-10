@@ -697,6 +697,37 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1 &152105868
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 152105869}
+  m_Layer: 0
+  m_Name: '-------------   '
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &152105869
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 152105868}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &184422532
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1474,7 +1505,7 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.42261827, y: 0, z: 0, w: 0.9063079}
-  m_LocalPosition: {x: 5.25, y: 12.25671, z: -8.974599}
+  m_LocalPosition: {x: 0, y: 12.256711, z: -10.2846}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3284,7 +3315,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &857429711
 Transform:
   m_ObjectHideFlags: 0
@@ -3314,7 +3345,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Spawners.WaveSpawner
   _director: {fileID: 2147244072}
   _timeBetweenWaves: 10
-  _spawnAreaSize: {x: 3, y: 0, z: 3}
+  _spawnAreaSize: {x: 10, y: 0, z: 10}
 --- !u!1 &872524373 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4306347848762786826, guid: 9e96dc8ccf06b43b280a494d6771e6b2,
@@ -4400,6 +4431,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: DeployZone
       objectReference: {fileID: 0}
+    - target: {fileID: 2032295666430711310, guid: 393425051463a40bcb4854b5fa597928,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4963774662770448952, guid: 393425051463a40bcb4854b5fa597928,
         type: 3}
       propertyPath: _itemsToCollect.Array.size
@@ -5040,7 +5076,7 @@ MonoBehaviour:
   m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   m_LookAt: {fileID: 0}
-  m_Follow: {fileID: 0}
+  m_Follow: {fileID: 1160945730}
   m_Lens:
     FieldOfView: 45
     OrthographicSize: 5
@@ -5082,7 +5118,7 @@ Transform:
   m_GameObject: {fileID: 1423783188}
   serializedVersion: 2
   m_LocalRotation: {x: 0.42261827, y: 0, z: 0, w: 0.9063079}
-  m_LocalPosition: {x: 5.25, y: 12.25671, z: -8.974599}
+  m_LocalPosition: {x: 0, y: 12.256711, z: -10.2846}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5304,8 +5340,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1517189381}
+  - component: {fileID: 1517189382}
   m_Layer: 0
-  m_Name: '-------------   '
+  m_Name: SimpleAreaSpawner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -5320,12 +5357,28 @@ Transform:
   m_GameObject: {fileID: 1517189380}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 16.71}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1517189382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1517189380}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48391e10bf44b46b1a4349b68d8952bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Spawners.SimpleAreaSpawner
+  EnemyData: {fileID: 11400000, guid: 552672598014c46da97f48a0e13b1806, type: 2}
+  SpawnCount: 10
+  SpawnInterval: 1
+  SpawnAreaSize: {x: 10, y: 0, z: 10}
 --- !u!1 &1549841700
 GameObject:
   m_ObjectHideFlags: 0
@@ -6529,7 +6582,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2049643157
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6717,7 +6770,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &2147244072
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8502,7 +8555,7 @@ PrefabInstance:
     - target: {fileID: 6790882568947784225, guid: 5f99486e7cd8b4bab9962635825fc22c,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6790882568947784225, guid: 5f99486e7cd8b4bab9962635825fc22c,
         type: 3}
@@ -8806,6 +8859,7 @@ SceneRoots:
   - {fileID: 685901444}
   - {fileID: 775157029}
   - {fileID: 1425858711}
+  - {fileID: 152105869}
   - {fileID: 1517189381}
   - {fileID: 857429711}
   - {fileID: 2147244073}
