@@ -216,6 +216,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.ArcadeIdleEngine.Experimental.StalkerEnemyMover
   _targetTag: Player
+  _detectionRadius: 8
+  _loseRadius: 12
   _rotationSpeed: 0
   _arrivalDistance: 0.5
   _showDebugGizmos: 1

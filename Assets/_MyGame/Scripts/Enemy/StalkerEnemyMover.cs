@@ -4,10 +4,10 @@ using IndianOceanAssets.Engine2_5D;
 namespace ArcadeBridge.ArcadeIdleEngine.Experimental
 {
     /// <summary>
-    /// [TR] Stalker (Sinsi) Hareket Modu:
-    /// Düşman oyuncuyu sürekli takip etmez. Oyuncunun o anki konumunu "En Son Bilinen Konum" olarak kaydeder,
-    /// o noktaya kadar yürür. Oraya varınca durur, etrafına bakar ve oyuncunun yeni yerini tespit edip oraya yürür.
-    /// Bu sayede oyuncu sürekli hareket ederek düşmanı "kiting" (peşinden koşturma) yapabilir.
+    /// [TR] Stalker (Sinsi) Hareket Modu - Alan Taramalı:
+    /// Düşman "Idle" modunda bekler. Oyuncu belirlenen alana (_detectionRadius) girerse takip başlar.
+    /// Takip, oyuncunun son görüldüğü konuma gitme (Stalking) mantığıyla çalışır.
+    /// Oyuncu çok uzaklaşırsa düşman tekrar Idle moduna döner.
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     [RequireComponent(typeof(EnemyStats))]
@@ -15,65 +15,86 @@ namespace ArcadeBridge.ArcadeIdleEngine.Experimental
     {
         private enum StalkerState 
         { 
-            Searching,      // Hedefi arıyor veya yeni hedef belirlemeye çalışıyor
-            MovingToLastPos // Belirlenen son noktaya doğru yürüyor
+            Idle,           // Oyuncuyu bekliyor, hareket etmiyor
+            Searching,      // Oyuncu menzilde, yeni konumunu tespit etmeye çalışıyor
+            MovingToLastPos // Oyuncunun en son görüldüğü noktaya yürüyor
         }
 
-        [Header("Hareket Ayarları")]
+        [Header("🎯 Hedef ve Alan Ayarları")]
         [SerializeField] private string _targetTag = "Player";
+        
+        [Tooltip("Düşman oyuncuyu kaç metre öteden fark etsin?")]
+        [SerializeField] private float _detectionRadius = 8f;
+        
+        [Tooltip("Oyuncu bu mesafeden daha uzağa kaçarsa takip bırakılır.")]
+        [SerializeField] private float _loseRadius = 12f;
+
+        [Header("⚙️ Hareket Ayarları")]
         [SerializeField] private float _rotationSpeed = 8f;
         [Tooltip("Hedefe ne kadar yaklaşınca varmış sayılsın?")]
         [SerializeField] private float _arrivalDistance = 0.5f;
 
-        [Header("Debug")]
+        [Header("👀 Debug")]
         [SerializeField] private bool _showDebugGizmos = true;
 
         // --- Referanslar ---
         private Rigidbody _rb;
         private EnemyStats _stats;
-        private Transform _cachedTarget; // [OPTIMIZASYON] Hedefi bir kez bulunca burada saklarız.
+        private Transform _cachedTarget; // Oyuncuyu bir kez bulup hafızada tutuyoruz
 
         // --- Durum Değişkenleri ---
         private StalkerState _currentState;
-        private Vector3 _lastKnownPosition; // Düşmanın gitmeye çalıştığı sabit nokta
-        private float _arrivalDistanceSqr;  // [OPTIMIZASYON] Mesafe karesi (Karekök almamak için)
-        private float _nextSearchTime;
-        private const float SEARCH_INTERVAL = 1.0f; // Saniyede 1 kez hedef ara (Eğer kayıpsa)
+        private Vector3 _lastKnownPosition;
+        
+        // --- Optimizasyon (Kare Alma İşlemleri) ---
+        private float _arrivalDistanceSqr;
+        private float _detectionRadiusSqr;
+        private float _loseRadiusSqr;
+        
+        // --- Zamanlayıcılar ---
+        private float _nextScanTime;
+        private const float SCAN_INTERVAL_IDLE = 0.5f;   // Idle iken saniyede 2 kez mesafe ölç
+        private const float SCAN_INTERVAL_ACTIVE = 0.2f; // Takipte iken saniyede 5 kez kontrol et
 
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
             _stats = GetComponent<EnemyStats>();
 
-            // Rigidbody Ayarları (Fizik motorunu yormamak için)
             _rb.useGravity = true;
             _rb.isKinematic = false;
-            // Sadece Y ekseninde dön, devrilme.
             _rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
             _rb.interpolation = RigidbodyInterpolation.Interpolate;
 
-            // [OPTIMIZASYON] Mesafeyi her karede çarpmamak için başta karesini alıyoruz.
-            _arrivalDistanceSqr = _arrivalDistance * _arrivalDistance;
+            // [OPTIMIZASYON] Karekök işlemi yapmamak için mesafelerin karesini sakla
+            UpdateSqrDistances();
         }
 
         private void OnEnable()
         {
-            _currentState = StalkerState.Searching;
-            _nextSearchTime = Time.time + Random.Range(0f, 0.5f); // Hepsi aynı anda başlamasın (Yük dengeleme)
-            
+            _currentState = StalkerState.Idle;
+            _nextScanTime = Time.time + Random.Range(0f, 0.5f); // Yük dengeleme
             ResetPhysics();
+            
+            // Eğer hedef daha önce bulunmadıysa bul (Sahne başında)
+            if (_cachedTarget == null) FindTargetInScene();
         }
 
         private void Update()
         {
-            // Duruma göre mantık çalıştır
+            // Durum Makinesi
             switch (_currentState)
             {
+                case StalkerState.Idle:
+                    HandleIdleState();
+                    break;
+                    
                 case StalkerState.Searching: 
                     HandleSearchingState(); 
                     break;
+                    
                 case StalkerState.MovingToLastPos: 
-                    CheckArrival(); 
+                    CheckArrivalAndDistance(); 
                     break;
             }
         }
@@ -88,43 +109,77 @@ namespace ArcadeBridge.ArcadeIdleEngine.Experimental
         }
 
         /// <summary>
-        /// Hedef arama veya hedef varsa pozisyon kilitleme mantığı.
+        /// Düşman bekleme modundadır. Sadece oyuncu yaklaştı mı diye bakar.
         /// </summary>
-        private void HandleSearchingState()
+        private void HandleIdleState()
         {
-            // 1. Elimizde zaten geçerli bir hedef var mı?
-            if (IsTargetValid())
+            if (Time.time < _nextScanTime) return;
+            _nextScanTime = Time.time + SCAN_INTERVAL_IDLE;
+
+            if (!IsTargetValid())
             {
-                // Hedef geçerliyse hemen onun pozisyonunu kilitle ve yola koyul.
-                LockNewDestination();
+                FindTargetInScene(); // Hedef kayıpsa (ölmüş veya yok olmuşsa) tekrar ara
                 return;
             }
 
-            // 2. Hedef yoksa, belirli aralıklarla sahneyi tara.
-            if (Time.time >= _nextSearchTime)
+            // Mesafe Kontrolü (Kareli işlem - Çok hızlı)
+            float distSqr = (transform.position - _cachedTarget.position).sqrMagnitude;
+            
+            // Eğer oyuncu algılama alanına girdiyse -> AV BAŞLASIN
+            if (distSqr < _detectionRadiusSqr)
             {
-                FindTargetInScene();
-                _nextSearchTime = Time.time + SEARCH_INTERVAL;
+                LockNewDestination(); // Hemen konumu kilitle ve harekete geç
             }
         }
 
         /// <summary>
-        /// Belirlenen noktaya vardık mı kontrolü.
+        /// Düşman aktif ama durmuş, oyuncunun yerini tespit etmeye çalışıyor.
         /// </summary>
-        private void CheckArrival()
+        private void HandleSearchingState()
         {
-            // [OPTIMIZASYON] sqrMagnitude kullanarak karekök işleminden kaçınıyoruz.
-            // (hedef - ben).sqrMagnitude
-            float distSqr = (transform.position - _lastKnownPosition).sqrMagnitude;
-
-            // Yüksekliği (Y ekseni) ihmal etmek istersen şu yöntemi kullan:
-            float dx = transform.position.x - _lastKnownPosition.x;
-            float dz = transform.position.z - _lastKnownPosition.z;
-            float flatDistSqr = (dx * dx) + (dz * dz);
-
-            if (flatDistSqr <= _arrivalDistanceSqr)
+            // Hedef hala geçerli mi?
+            if (IsTargetValid())
             {
-                // Vardık! Dur ve tekrar arama moduna geç.
+                // Geçerliyse konumu kilitle ve yürü
+                LockNewDestination();
+                return;
+            }
+            
+            // Değilse ara (Çok nadir çalışır)
+            if (Time.time > _nextScanTime)
+            {
+                FindTargetInScene();
+                _nextScanTime = Time.time + SCAN_INTERVAL_IDLE;
+            }
+        }
+
+        /// <summary>
+        /// Yürürken yapılan kontroller: Vardık mı? Oyuncu çok uzaklaştı mı?
+        /// </summary>
+        private void CheckArrivalAndDistance()
+        {
+            // 1. Hedef çok uzaklaştı mı kontrolü (Ara sıra yap, her kare değil)
+            if (Time.time >= _nextScanTime)
+            {
+                _nextScanTime = Time.time + SCAN_INTERVAL_ACTIVE;
+                
+                if (IsTargetValid())
+                {
+                    float distToRealTargetSqr = (transform.position - _cachedTarget.position).sqrMagnitude;
+                    if (distToRealTargetSqr > _loseRadiusSqr)
+                    {
+                        // Oyuncu kaçtı, takibi bırak
+                        StopMovingAndIdle();
+                        return;
+                    }
+                }
+            }
+
+            // 2. Belirlenen noktaya vardık mı?
+            float distToDestSqr = (transform.position - _lastKnownPosition).sqrMagnitude;
+            if (distToDestSqr <= _arrivalDistanceSqr)
+            {
+                // Vardık! Dur ve tekrar Searching moduna geç (Yeni konum alacak)
                 ResetPhysics();
                 _currentState = StalkerState.Searching;
             }
@@ -132,10 +187,17 @@ namespace ArcadeBridge.ArcadeIdleEngine.Experimental
 
         private void LockNewDestination()
         {
-            // O an hedef neredeyse orayı hafızaya al.
-            // Hedef sonradan hareket etse bile düşman BU noktaya gidecek (Stalker mantığı).
-            _lastKnownPosition = _cachedTarget.position;
-            _currentState = StalkerState.MovingToLastPos;
+            if (_cachedTarget != null)
+            {
+                _lastKnownPosition = _cachedTarget.position;
+                _currentState = StalkerState.MovingToLastPos;
+            }
+        }
+
+        private void StopMovingAndIdle()
+        {
+            ResetPhysics();
+            _currentState = StalkerState.Idle;
         }
 
         private bool IsTargetValid()
@@ -145,12 +207,10 @@ namespace ArcadeBridge.ArcadeIdleEngine.Experimental
 
         private void FindTargetInScene()
         {
-            // [OPTIMIZASYON] Bu işlem ağırdır, sadece hedef kayıpsa çalışır.
             GameObject targetObj = GameObject.FindGameObjectWithTag(_targetTag);
             if (targetObj != null)
             {
                 _cachedTarget = targetObj.transform;
-                LockNewDestination(); // Bulur bulmaz yola çık
             }
         }
 
@@ -159,23 +219,18 @@ namespace ArcadeBridge.ArcadeIdleEngine.Experimental
             if (_stats.Definition == null) return;
 
             Vector3 direction = (destination - transform.position).normalized;
-            direction.y = 0; // Havaya/Yere bakmasın
+            direction.y = 0; 
 
-            // Hareket vektörü çok küçükse işlem yapma
             if (direction.sqrMagnitude > 0.001f)
             {
-                // Rotasyon (Yumuşak Dönüş)
                 Quaternion lookRotation = Quaternion.LookRotation(direction);
-                // [OPTIMIZASYON] Zaten bakıyorsa Slerp hesabı yapma
                 if (Quaternion.Angle(_rb.rotation, lookRotation) > 0.5f)
                 {
                     _rb.MoveRotation(Quaternion.Slerp(_rb.rotation, lookRotation, _rotationSpeed * Time.fixedDeltaTime));
                 }
 
-                // Hareket (Hız)
                 Vector3 moveVelocity = direction * _stats.Definition.MoveSpeed;
                 
-                // Yerçekimini (Y eksenindeki hızı) koru, diğer eksenleri değiştir.
                 #if UNITY_6000_0_OR_NEWER
                 moveVelocity.y = _rb.linearVelocity.y;
                 _rb.linearVelocity = moveVelocity;
@@ -197,28 +252,37 @@ namespace ArcadeBridge.ArcadeIdleEngine.Experimental
             #endif
         }
 
-        // Editörde ne yaptığını görmek için çizgiler çizer
+        private void UpdateSqrDistances()
+        {
+            _arrivalDistanceSqr = _arrivalDistance * _arrivalDistance;
+            _detectionRadiusSqr = _detectionRadius * _detectionRadius;
+            _loseRadiusSqr = _loseRadius * _loseRadius;
+        }
+
+        // Editörde ne yaptığını görmek için
         private void OnDrawGizmosSelected()
         {
             if (!_showDebugGizmos) return;
 
+            // Alanları çiz
+            Gizmos.color = Color.yellow; // Algılama alanı
+            Gizmos.DrawWireSphere(transform.position, _detectionRadius);
+
+            Gizmos.color = new Color(1, 0.5f, 0, 0.5f); // Kaybetme alanı (Turuncu)
+            Gizmos.DrawWireSphere(transform.position, _loseRadius);
+
             if (_currentState == StalkerState.MovingToLastPos)
             {
-                Gizmos.color = Color.red; // Gittiği hedef (Kırmızı)
-                Gizmos.DrawWireSphere(_lastKnownPosition, _arrivalDistance);
+                Gizmos.color = Color.red;
                 Gizmos.DrawLine(transform.position, _lastKnownPosition);
-            }
-            else
-            {
-                Gizmos.color = Color.yellow; // Arıyor (Sarı)
-                Gizmos.DrawWireSphere(transform.position, 1f);
+                Gizmos.DrawWireSphere(_lastKnownPosition, 0.5f);
             }
         }
         
         private void OnValidate()
         {
-            // Editörde değeri değiştirince karesini otomatik güncelle
-            _arrivalDistanceSqr = _arrivalDistance * _arrivalDistance;
+            if (_loseRadius < _detectionRadius) _loseRadius = _detectionRadius + 2f;
+            UpdateSqrDistances();
         }
     }
 }
