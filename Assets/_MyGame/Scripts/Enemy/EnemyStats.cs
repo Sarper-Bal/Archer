@@ -1,39 +1,24 @@
 using UnityEngine;
+using IndianOceanAssets.Engine2_5D.Data;
 
 namespace IndianOceanAssets.Engine2_5D
 {
     public class EnemyStats : MonoBehaviour
     {
-        [Header("Düşman Verisi")]
-        [SerializeField] private EnemyDefinition _enemyDefinition;
+        [field: SerializeField] public EnemyDefinition Definition { get; private set; }
 
-        private Health _health;
+        // [YENİ] Ganimet bayrağı
+        public bool LootClaimed { get; set; } = false;
 
-        // --- KRİTİK EKLEME: AI'nın veriye ulaşması için bu satır ŞART ---
-        public EnemyDefinition Definition => _enemyDefinition; 
-
-        private void Awake()
+        public void InitializeRuntime(EnemyDefinition data)
         {
-            _health = GetComponent<Health>();
+            Definition = data;
+            
+            // [YENİ] Düşman her doğduğunda bayrağı indir (Sıfırla)
+            LootClaimed = false; 
+            
+            // Diğer stat işlemleri...
+            // (Mevcut kodların burada devam ediyor olabilir)
         }
-
-        private void OnEnable()
-        {
-            if (_enemyDefinition != null && _health != null)
-            {
-                _health.InitializeHealth(_enemyDefinition.MaxHealth, _enemyDefinition.DeathEffectPool);
-            }
-        }
-        public void InitializeRuntime(EnemyDefinition newData)
-    {
-        _enemyDefinition = newData; // Veriyi değiştir
-        
-        if (_health != null)
-        {
-            // Canı yeni veriye göre fulle
-            _health.InitializeHealth(newData.MaxHealth, newData.DeathEffectPool);
-        }
-    }
-        
     }
 }

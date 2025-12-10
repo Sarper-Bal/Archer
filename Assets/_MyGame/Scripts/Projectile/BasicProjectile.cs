@@ -1,18 +1,19 @@
 using UnityEngine;
 using System.Collections;
 using ArcadeBridge.ArcadeIdleEngine.Pools;
+using ArcadeBridge.ArcadeIdleEngine.Storage;
+using ArcadeBridge.ArcadeIdleEngine.Items;
 
 namespace IndianOceanAssets.Engine2_5D
 {
     public enum ProjectileTrackingMode
     {
-        Guided, // Hedefi takip eder
-        Linear  // Dümdüz gider
+        Guided,
+        Linear
     }
 
     public class BasicProjectile : MonoBehaviour
     {
-        // --- DEĞİŞKENLER (Artık Inspector'da görünmelerine gerek yok) ---
         private ProjectileTrackingMode _trackingMode;
         private float _speed;
         private float _lifeTime;
@@ -20,22 +21,28 @@ namespace IndianOceanAssets.Engine2_5D
         private float _explosionRadius;
         private LayerMask _damageLayer;
         
-        // Referanslar
         private BasicProjectilePool _myPool;
         private ExplosionPool _explosionPool;
         private Transform _target;
         private Vector3 _targetPosition;
+        private Inventory _ownerInventory;
+        
         private Coroutine _lifeTimeCoroutine;
         private readonly Collider[] _explosionHits = new Collider[15];
+        private WaitForSeconds _waitLifeTime;
+        private Transform _transform;
 
-        /// <summary>
-        /// Mermiyi silah verilerine göre başlatır.
-        /// </summary>
-        public void Initialize(Transform target, BasicProjectilePool pool, WeaponDefinition weaponDef)
+        private void Awake()
         {
-            // 1. Verileri Silah Dosyasından Al
+            _transform = transform;
+        }
+
+        public void Initialize(Transform target, BasicProjectilePool pool, WeaponDefinition weaponDef, Inventory ownerInventory = null)
+        {
             _target = target;
             _myPool = pool;
+            _ownerInventory = ownerInventory;
+
             _damage = weaponDef.Damage;
             _speed = weaponDef.ProjectileSpeed;
             _lifeTime = weaponDef.ProjectileLifeTime;
@@ -44,43 +51,41 @@ namespace IndianOceanAssets.Engine2_5D
             _explosionRadius = weaponDef.ExplosionRadius;
             _damageLayer = weaponDef.DamageLayer;
 
-            // 2. Hedef Konum Belirle
+            if (_waitLifeTime == null) _waitLifeTime = new WaitForSeconds(_lifeTime);
+
             if (_target != null)
             {
                 _targetPosition = _target.position;
-                Vector3 dir = (_targetPosition - transform.position).normalized;
-                if (dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
+                Vector3 dir = (_targetPosition - _transform.position).normalized;
+                if (dir.sqrMagnitude > 0.001f) _transform.rotation = Quaternion.LookRotation(dir);
             }
             else
             {
-                _targetPosition = transform.position + transform.forward * 50f;
+                _targetPosition = _transform.position + _transform.forward * 50f;
             }
 
-            // 3. Sayaç Başlat
             if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
             _lifeTimeCoroutine = StartCoroutine(LifeTimeRoutine());
         }
 
         private void Update()
         {
-            // Guided Mod: Hedef hareket ederse rotayı güncelle
-            if (_trackingMode == ProjectileTrackingMode.Guided && _target != null && _target.gameObject.activeInHierarchy)
+            if (_trackingMode == ProjectileTrackingMode.Guided && _target != null)
             {
                 _targetPosition = _target.position;
             }
 
-            // Hareket
-            transform.position = Vector3.MoveTowards(transform.position, _targetPosition, _speed * Time.deltaTime);
+            float moveStep = _speed * Time.deltaTime;
+            _transform.position = Vector3.MoveTowards(_transform.position, _targetPosition, moveStep);
 
-            // Yönelme
             if (_trackingMode == ProjectileTrackingMode.Guided)
             {
-                Vector3 dir = (_targetPosition - transform.position).normalized;
-                if (dir != Vector3.zero) transform.rotation = Quaternion.LookRotation(dir);
+                Vector3 dir = (_targetPosition - _transform.position).normalized;
+                if (dir.sqrMagnitude > 0.001f) 
+                    _transform.rotation = Quaternion.LookRotation(dir);
             }
 
-            // Hedefe varış kontrolü
-            if (Vector3.Distance(transform.position, _targetPosition) < 0.1f)
+            if ((_targetPosition - _transform.position).sqrMagnitude < 0.25f)
             {
                 Explode();
             }
@@ -88,9 +93,7 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void OnTriggerEnter(Collider other)
         {
-            // LayerMask kontrolü: Çarpan obje bizim hasar vereceğimiz layer'da mı?
-            // (1 << layer) bitwise işlemi ile kontrol edilir.
-            if (((1 << other.gameObject.layer) & _damageLayer) != 0 || other.gameObject.layer == 0) // Default layer'a çarpınca da patlasın
+            if (((1 << other.gameObject.layer) & _damageLayer) != 0 || other.gameObject.layer == 0)
             {
                 Explode();
             }
@@ -98,32 +101,73 @@ namespace IndianOceanAssets.Engine2_5D
 
         private void Explode()
         {
-            // 1. Görsel Efekt
             if (_explosionPool != null)
             {
                 var effect = _explosionPool.Get();
-                effect.transform.position = transform.position;
+                effect.transform.position = _transform.position;
                 effect.transform.rotation = Quaternion.identity;
                 effect.Initialize(_explosionPool);
             }
 
-            // 2. Alan Hasarı
-            int hitCount = Physics.OverlapSphereNonAlloc(transform.position, _explosionRadius, _explosionHits, _damageLayer);
+            int hitCount = Physics.OverlapSphereNonAlloc(_transform.position, _explosionRadius, _explosionHits, _damageLayer);
 
             for (int i = 0; i < hitCount; i++)
             {
-                if (_explosionHits[i].TryGetComponent(out IDamageable damageable))
+                if (_explosionHits[i].TryGetComponent(out Health health))
                 {
-                    damageable.TakeDamage(_damage);
+                    bool isKillingBlow = !health.IsDead && (health.CurrentHealth <= _damage);
+
+                    if (isKillingBlow)
+                    {
+                        TryLootEnemy(_explosionHits[i]);
+                    }
+
+                    health.TakeDamage(_damage);
                 }
             }
 
             ReturnToPool();
         }
 
+        private void TryLootEnemy(Collider enemyCollider)
+        {
+            if (_ownerInventory == null) return; // Sahibi yoksa (Player mermisi vb.) alma.
+
+            if (enemyCollider.TryGetComponent(out EnemyBehaviorController enemyController))
+            {
+                // [ÖNEMLİ] Daha önce alındıysa tekrar alma
+                if (enemyController.LootDropped) return;
+
+                var stats = enemyController.GetComponent<EnemyStats>();
+                if (stats != null && stats.Definition != null)
+                {
+                    ItemDefinition lootItem = stats.Definition.DropItem;
+                    if (lootItem == null) return;
+
+                    if (!_ownerInventory.CanAdd(lootItem)) return;
+
+                    if (lootItem.Pool != null)
+                    {
+                        Item newItem = lootItem.Pool.Get();
+                        if (newItem != null)
+                        {
+                            newItem.transform.position = enemyCollider.transform.position;
+                            newItem.gameObject.SetActive(true);
+                            newItem.transform.SetParent(null);
+                            
+                            _ownerInventory.Add(newItem);
+
+                            // [İŞARETLE] Kule bunu aldı, Spawner oyuncuya vermesin.
+                            enemyController.LootDropped = true;
+                        }
+                    }
+                }
+            }
+        }
+
         private IEnumerator LifeTimeRoutine()
         {
-            yield return new WaitForSeconds(_lifeTime);
+            yield return _waitLifeTime;
             ReturnToPool();
         }
 
@@ -131,15 +175,7 @@ namespace IndianOceanAssets.Engine2_5D
         {
             if (_lifeTimeCoroutine != null) StopCoroutine(_lifeTimeCoroutine);
             if (_myPool != null) _myPool.Release(this);
-            else gameObject.SetActive(false);
-        }
-
-        // Gizmo çizimi için layer ve radius verisini dışarıdan alamayız (editör modunda çalışmaz)
-        // O yüzden sadece basit bir küre çiziyoruz.
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.color = new Color(1, 0, 0, 0.4f);
-            Gizmos.DrawSphere(transform.position, 0.5f);
+            else Destroy(gameObject);
         }
     }
 }

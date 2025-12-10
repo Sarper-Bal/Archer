@@ -27,6 +27,10 @@ namespace IndianOceanAssets.Engine2_5D
         private SmartWaveManager _cachedWaveManager;
         public System.Action<EnemyBehaviorController> OnReturnToPool;
 
+        // [YENİ] Ganimet Çakışmasını Önleyen Bayrak
+        // True ise: Kule bu düşmanı öldürüp ganimetini almıştır, Spawner oyuncuya vermez.
+        public bool LootDropped { get; set; }
+
         private void Awake()
         {
             _stats = GetComponent<EnemyStats>();
@@ -41,40 +45,25 @@ namespace IndianOceanAssets.Engine2_5D
             _cachedWaveManager = FindObjectOfType<SmartWaveManager>();
         }
 
-        /// <summary>
-        /// [TR] Bu metot Unity tarafından obje her aktif olduğunda (SetActive true) otomatik çağrılır.
-        /// Ancak Spawner ile çalışırken veriler henüz yüklenmemiş olabilir.
-        /// </summary>
         private void OnEnable()
         {
-            // Eğer spawner tarafından yönetilmiyorsa (Test amaçlı sahneye elle koyduysan) çalışsın.
-            // Spawner kullanıyorsak InitializeEnemy zaten davranışı ayarlayacak.
-            if (_stats != null && _stats.Definition != null)
-            {
-                // Sadece mevcut ayarı koru, değiştirme.
-            }
+            // Spawner ile çalışırken burası boş kalabilir, InitializeEnemy her şeyi yapar.
         }
 
-        /// <summary>
-        /// [TR] Spawner tarafından çağrılan KURTARICI metot.
-        /// </summary>
         public void InitializeEnemy(EnemyDefinition data)
         {
-            // 1. Önce objeyi aktif et (Böylece OnEnable çalışıp biter ve aradan çekilir)
             gameObject.SetActive(true);
 
-            // 2. Verileri yükle
+            // [KRİTİK] Yeni doğduğunda bayrağı indir. Henüz kimse ganimetini almadı.
+            LootDropped = false;
+
             if (_stats != null) _stats.InitializeRuntime(data);
             if (_health != null) _health.ResetHealth();
 
-            // 3. Fiziksel hızları sıfırla
             ResetPhysics();
 
-            // 4. [KESİN ÇÖZÜM] Davranışı EN SON burada zorla atıyoruz.
-            // OnEnable veya başka bir şey bunu ezemez.
             if (data != null)
             {
-                // Debug.Log($"🤖 {name} davranışı ayarlanıyor: {data.DefaultBehavior}");
                 SetBehavior(data.DefaultBehavior);
             }
             else
@@ -97,7 +86,7 @@ namespace IndianOceanAssets.Engine2_5D
         public void SetBehavior(EnemyBehaviorType newBehavior)
         {
             _currentBehavior = newBehavior; 
-            DisableAllBehaviors(); // Önce hepsini kapat
+            DisableAllBehaviors(); 
 
             switch (newBehavior)
             {
@@ -115,7 +104,6 @@ namespace IndianOceanAssets.Engine2_5D
                     else Debug.LogError($"❌ {name}: 'DirectionalEnemyMover' scripti eksik!");
                     break;
                 default:
-                    // None veya hatalı seçim durumunda SimpleChaser'a düşür
                     if (_simpleMover) _simpleMover.enabled = true;
                     break;
             }

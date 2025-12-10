@@ -9,7 +9,6 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
 {
     public class SimpleAreaSpawner : MonoBehaviour
     {
-        // --- AYARLAR ---
         [System.Serializable]
         public class SpawnWaveSettings
         {
@@ -41,11 +40,7 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
 
         private void Start()
         {
-            // Oyuncuyu ve çantasını otomatik bul
-            if (_autoFindPlayer)
-            {
-                FindPlayerInventory();
-            }
+            if (_autoFindPlayer) FindPlayerInventory();
 
             if (_spawnList != null)
             {
@@ -57,42 +52,25 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             }
         }
 
-        // [FINAL] En kararlı oyuncu bulma algoritması
         private void FindPlayerInventory()
         {
-            // 1. Önce aktif kontrolcüyü bul (En güvenli yöntem)
             var realPlayerController = FindObjectOfType<PlayerCannonController>();
-            
             if (realPlayerController != null)
             {
-                // Çantayı; objenin kendisinde, çocuklarında veya ebeveyninde ara
                 _playerInventory = realPlayerController.GetComponent<Inventory>();
+                if (_playerInventory == null) _playerInventory = realPlayerController.GetComponentInChildren<Inventory>();
+                if (_playerInventory == null) _playerInventory = realPlayerController.GetComponentInParent<Inventory>();
                 
-                if (_playerInventory == null)
-                    _playerInventory = realPlayerController.GetComponentInChildren<Inventory>();
-                
-                if (_playerInventory == null)
-                    _playerInventory = realPlayerController.GetComponentInParent<Inventory>();
-
-                if (_playerInventory != null)
-                {
-                    // Debug.Log($"✅ Spawner: Gerçek Envanter kilitlendi: {_playerInventory.name}");
-                    return;
-                }
+                if (_playerInventory != null) return;
             }
 
-            // 2. Kontrolcü yoksa Tag ile şansını dene
             if (_playerInventory == null)
             {
                 GameObject tagObj = GameObject.FindGameObjectWithTag("Player");
                 if (tagObj != null) _playerInventory = tagObj.GetComponentInChildren<Inventory>();
             }
 
-            // 3. Hala yoksa biraz bekle ve tekrar dene (Oyuncu geç doğuyor olabilir)
-            if (_playerInventory == null) 
-            {
-                StartCoroutine(RetryFindPlayer());
-            }
+            if (_playerInventory == null) StartCoroutine(RetryFindPlayer());
         }
 
         private IEnumerator RetryFindPlayer()
@@ -154,10 +132,11 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             {
                 if (_isApplicationQuitting) return;
 
-                // Referans kontrolü: Çanta bağlantısı koptuysa (sahne değişimi vb.) tekrar bağla
                 if (_playerInventory == null && _autoFindPlayer) FindPlayerInventory();
 
-                TryDropLoot(deadEnemy, wave.EnemyType);
+                // [KRİTİK DÜZELTME] Ganimet verilip verilmeyeceğini kontrol et
+                CheckAndDropLoot(deadEnemy, wave.EnemyType);
+
                 ReturnToPool(deadEnemy);
                 
                 if (wave != null) { wave.ActiveEnemies--; wave.KillCount++; }
@@ -165,25 +144,31 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             };
         }
 
-        private void TryDropLoot(EnemyBehaviorController enemy, EnemyDefinition data)
+        // [YENİ] Kontrol Mekanizması
+        private void CheckAndDropLoot(EnemyBehaviorController enemy, EnemyDefinition data)
         {
-            // Güvenlik kontrolleri
-            if (_isApplicationQuitting || _playerInventory == null || data.DropItem == null) return;
+            if (_isApplicationQuitting) return;
             
-            // Çantada yer var mı? (Inventory sınıfının kendi yeteneğini kullanıyoruz)
+            // Eğer düşman öldüğünde "Benim ganimetim alındı" (LootDropped == true) diyorsa,
+            // Demek ki Kule onu öldürmüş ve ganimetini almıştır. Biz oyuncuya vermiyoruz.
+            if (enemy.LootDropped) return; 
+
+            // Eğer alınmadıysa, demek ki Oyuncu öldürdü (veya başka bir sebeple öldü).
+            // O zaman Oyuncunun çantasına yolla.
+            TryDropLootToPlayer(enemy, data);
+        }
+
+        private void TryDropLootToPlayer(EnemyBehaviorController enemy, EnemyDefinition data)
+        {
+            if (_playerInventory == null || data.DropItem == null) return;
             if (!_playerInventory.CanAdd(data.DropItem)) return;
 
-            // Eşyayı yarat
             var item = data.DropItem.Pool.Get();
             if (item != null)
             {
                 item.transform.position = enemy.transform.position;
                 item.gameObject.SetActive(true);
-                
-                // Hiyerarşiden kopar (Önemli!)
                 item.transform.SetParent(null); 
-                
-                // Çantaya ekle (Animasyon ve mantığı Inventory halleder)
                 _playerInventory.Add(item);
             }
         }
