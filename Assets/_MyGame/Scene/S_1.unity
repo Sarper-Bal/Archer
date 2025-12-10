@@ -3417,7 +3417,7 @@ PrefabInstance:
     - target: {fileID: 6782614657570378929, guid: 10548fdeaffe64d72901424935ed5f94,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: 2.25
       objectReference: {fileID: 0}
     - target: {fileID: 6782614657570378929, guid: 10548fdeaffe64d72901424935ed5f94,
         type: 3}
@@ -4225,6 +4225,7 @@ MonoBehaviour:
   _enemyLayer:
     serializedVersion: 2
     m_Bits: 128
+  _stopOnFullInventory: 1
 --- !u!4 &1271283268
 Transform:
   m_ObjectHideFlags: 0
@@ -4299,9 +4300,9 @@ MonoBehaviour:
     StackingPoint: {fileID: 2213993531014614238}
     PickUpDuration: 0.3
     _rowColumnHeight:
-      RowCount: 1
+      RowCount: 2
       ColumnCount: 2
-      HeightCount: 1
+      HeightCount: 5
       RowOffset: 0.8
       ColumnOffset: 1
       HeightOffset: 0.5
