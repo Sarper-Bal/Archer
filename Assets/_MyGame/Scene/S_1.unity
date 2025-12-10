@@ -4299,8 +4299,8 @@ MonoBehaviour:
     StackingPoint: {fileID: 2213993531014614238}
     PickUpDuration: 0.3
     _rowColumnHeight:
-      RowCount: 4
-      ColumnCount: 4
+      RowCount: 1
+      ColumnCount: 2
       HeightCount: 1
       RowOffset: 0.8
       ColumnOffset: 1

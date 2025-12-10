@@ -129,14 +129,21 @@ namespace IndianOceanAssets.Engine2_5D
             ReturnToPool();
         }
 
+        // [GÜNCELLENEN METOT]
         private void TryLootEnemy(Collider enemyCollider)
         {
-            if (_ownerInventory == null) return; // Sahibi yoksa (Player mermisi vb.) alma.
+            // Eğer merminin sahibi yoksa (Örn: Oyuncu mermisi) işlem yapma, Spawner halleder.
+            if (_ownerInventory == null) return;
 
             if (enemyCollider.TryGetComponent(out EnemyBehaviorController enemyController))
             {
-                // [ÖNEMLİ] Daha önce alındıysa tekrar alma
                 if (enemyController.LootDropped) return;
+
+                // [KRİTİK DEĞİŞİKLİK]
+                // Öldürücü vuruşu Kule yaptı. Ganimet sorumluluğu Kule'de.
+                // Kasa dolu olsa bile "Ben öldürdüm" diyerek bayrağı kaldırıyoruz.
+                // Böylece Spawner devreye girip oyuncuya vermiyor.
+                enemyController.LootDropped = true;
 
                 var stats = enemyController.GetComponent<EnemyStats>();
                 if (stats != null && stats.Definition != null)
@@ -144,6 +151,8 @@ namespace IndianOceanAssets.Engine2_5D
                     ItemDefinition lootItem = stats.Definition.DropItem;
                     if (lootItem == null) return;
 
+                    // Kasa dolu mu? Doluysa RETURN et. 
+                    // (LootDropped = true olduğu için Spawner da vermeyecek -> Eşya boşa gidecek)
                     if (!_ownerInventory.CanAdd(lootItem)) return;
 
                     if (lootItem.Pool != null)
@@ -156,9 +165,6 @@ namespace IndianOceanAssets.Engine2_5D
                             newItem.transform.SetParent(null);
                             
                             _ownerInventory.Add(newItem);
-
-                            // [İŞARETLE] Kule bunu aldı, Spawner oyuncuya vermesin.
-                            enemyController.LootDropped = true;
                         }
                     }
                 }
