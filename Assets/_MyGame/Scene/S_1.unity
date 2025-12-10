@@ -2682,51 +2682,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 1969479002}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &564259826
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 564259827}
-  - component: {fileID: 564259828}
-  m_Layer: 0
-  m_Name: Gate_2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &564259827
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 564259826}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.39, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1425858711}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &564259828
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 564259826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2e5def1c51a844dc845dc08e7bf14fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Spawners.BattleSpawnPoint
-  PointID: Gate2
 --- !u!1 &622209195
 GameObject:
   m_ObjectHideFlags: 0
@@ -3037,6 +2992,12 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1160945730}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &726888999 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6790882569212711915, guid: 5f99486e7cd8b4bab9962635825fc22c,
+    type: 3}
+  m_PrefabInstance: {fileID: 6790882570074913309}
+  m_PrefabAsset: {fileID: 0}
 --- !u!224 &771723608 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8437745987424659666, guid: 22b3cea5fe6933646a8201c7f3855121,
@@ -3223,51 +3184,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 622209197}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &839435655
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 839435656}
-  - component: {fileID: 839435657}
-  m_Layer: 0
-  m_Name: Gate_1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &839435656
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 839435655}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1425858711}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &839435657
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 839435655}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2e5def1c51a844dc845dc08e7bf14fa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Spawners.BattleSpawnPoint
-  PointID: Gate1
 --- !u!1 &848680795
 GameObject:
   m_ObjectHideFlags: 0
@@ -5261,76 +5177,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &1425858708
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1425858711}
-  - component: {fileID: 1425858710}
-  - component: {fileID: 1425858709}
-  m_Layer: 0
-  m_Name: DifficultyManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1425858709
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425858708}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66a1354b4b3c6438ab72df8190adc109, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Spawners.BudgetWaveSpawner
-  _waves:
-  - WaveName: 
-    EnemyType: {fileID: 11400000, guid: 57098172a52c141d09ba73f0a3880861, type: 2}
-    BaseBudget: 100
-    OptionalFilterID: 
-    SpawnInterval: 0.5
-    DelayBeforeWave: 0
---- !u!114 &1425858710
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425858708}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb66f8f3789e04f879b9370a99406eb4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Managers.BattleDifficultyManager
-  _startingMultiplier: 1
-  _minMultiplier: 0.8
-  _winDifficultyIncrease: 0.1
-  _lossDifficultyDecrease: 0.05
---- !u!4 &1425858711
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1425858708}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -11.85, y: 0, z: 12.49}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 839435656}
-  - {fileID: 564259827}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1517189380
 GameObject:
   m_ObjectHideFlags: 0
@@ -5375,18 +5221,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48391e10bf44b46b1a4349b68d8952bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Spawners.SimpleAreaSpawner
+  _playerInventory:
+    StackingPoint: {fileID: 726888999}
+    PickUpDuration: 0.3
+    _rowColumnHeight:
+      RowCount: 1
+      ColumnCount: 1
+      HeightCount: 10
+      RowOffset: 0
+      ColumnOffset: 0
+      HeightOffset: 0.5
+  _totalGlobalKills: 0
   _spawnList:
   - Name: 
     EnemyType: {fileID: 11400000, guid: 552672598014c46da97f48a0e13b1806, type: 2}
     SpawnCount: 10
     SpawnInterval: 0.1
-    StartDelay: 5
+    StartDelay: 1
+    ActiveEnemies: 0
+    KillCount: 0
+    CurrentStatus: Waiting
   - Name: 
     EnemyType: {fileID: 0}
     SpawnCount: 0
     SpawnInterval: 0
     StartDelay: 0
-  _spawnAreaSize: {x: 10, y: 0, z: 10}
+    ActiveEnemies: 0
+    KillCount: 0
+    CurrentStatus: Waiting
+  _spawnAreaSize: {x: 10, y: 0, z: 5}
 --- !u!1 &1549841700
 GameObject:
   m_ObjectHideFlags: 0
@@ -8866,7 +8729,6 @@ SceneRoots:
   - {fileID: 622209197}
   - {fileID: 685901444}
   - {fileID: 775157029}
-  - {fileID: 1425858711}
   - {fileID: 152105869}
   - {fileID: 1517189381}
   - {fileID: 857429711}

@@ -1,6 +1,7 @@
 using UnityEngine;
 using ArcadeBridge.ArcadeIdleEngine.Pools;
 using ArcadeBridge.ArcadeIdleEngine.Enemy;
+using ArcadeBridge.ArcadeIdleEngine.Items; // [EKLENDI] ItemDefinition için gerekli
 
 namespace IndianOceanAssets.Engine2_5D
 {
@@ -17,7 +18,7 @@ namespace IndianOceanAssets.Engine2_5D
         SimpleChaser,
         Stalker,
         Patrol,
-        Directional // [YENİ] Yeni hareket tipi eklendi
+        Directional
     }
 
     [CreateAssetMenu(fileName = "NewEnemyDefinition", menuName = "MyGame/Enemy Definition")]
@@ -27,20 +28,21 @@ namespace IndianOceanAssets.Engine2_5D
         public EnemyCategory Category = EnemyCategory.Swarm;
 
         [Header("📊 İstatistikler")]
-        [Tooltip("Değeri değiştirdiğinde puan otomatik güncellenir.")]
         public float MoveSpeed = 5f;
         public float MaxHealth = 100f;
         public float ContactDamage = 10f;
 
-        [Header("💀 Tehdit Puanı (Otomatik)")]
-        [Tooltip("Bu düşmanın maliyeti.")]
+        [Header("💀 Tehdit Puanı")]
         public float ThreatScore = 0f; 
+
+        [Header("💰 Ganimet (Loot)")]
+        [Tooltip("Düşman öldüğünde çantaya ne eklensin? (Boş bırakırsan bir şey vermez)")]
+        public ItemDefinition DropItem; // [YENİ] Buraya Blue Gem sürükleyeceksin.
 
         [Header("🧠 Yapay Zeka")]
         [SerializeField] private EnemyBehaviorType _defaultBehavior = EnemyBehaviorType.SimpleChaser;
         public RouteID PatrolRouteID; 
         
-        // [YENİ] Doğrusal hareket yönü (X, Y, Z). Genelde Z= -1 (Aşağı) veya Z= 1 (Yukarı) olur.
         [Tooltip("Sadece 'Directional' davranışı seçiliyse kullanılır.")]
         public Vector3 FixedDirection = new Vector3(0, 0, -1);
 

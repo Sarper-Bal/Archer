@@ -17,6 +17,7 @@ MonoBehaviour:
   MaxHealth: 1
   ContactDamage: 1
   ThreatScore: 5
+  DropItem: {fileID: 11400000, guid: edebc532df7a46f45afba7963114b2f5, type: 2}
   _defaultBehavior: 2
   PatrolRouteID: {fileID: 11400000, guid: 2feae313691fd4cd5b2e3e832ea56c04, type: 2}
   FixedDirection: {x: 0, y: 0, z: -1}

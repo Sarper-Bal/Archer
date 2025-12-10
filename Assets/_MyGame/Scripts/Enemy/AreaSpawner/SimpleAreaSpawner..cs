@@ -2,135 +2,184 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using IndianOceanAssets.Engine2_5D; 
+using ArcadeBridge.ArcadeIdleEngine.Storage; // Inventory ve Item için
+using ArcadeBridge.ArcadeIdleEngine.Controller; // PlayerCannonController için
 
 namespace IndianOceanAssets.Engine2_5D.Spawners
 {
     public class SimpleAreaSpawner : MonoBehaviour
     {
-        // --- AYARLAR VE DATA ---
+        // --- AYARLAR ---
         [System.Serializable]
         public class SpawnWaveSettings
         {
-            [Header("Kim Doğacak?")]
             public string Name; 
             public EnemyDefinition EnemyType;
-
-            [Header("Nasıl Doğacak?")]
-            [Tooltip("Toplam kaç adet doğacak?")]
             public int SpawnCount = 5;
-
-            [Tooltip("Kaç saniyede bir doğsun?")]
             public float SpawnInterval = 1f;
-
-            [Tooltip("Dalga başlamadan önce (veya tekrar etmeden önce) kaç saniye beklensin?")]
             public float StartDelay = 2f;
-
-            [Header("🔴 Canlı Takip (Değiştirme)")]
-            [Tooltip("Şu an sahnede canlı olan düşman sayısı.")]
+            
+            [Header("🔴 Durum")]
             public int ActiveEnemies = 0;
-            
-            [Tooltip("Bu gruptan toplam kaç düşman öldürüldü?")]
             public int KillCount = 0;
-            
-            [Tooltip("Şu anki durumu gösterir.")]
             public string CurrentStatus = "Waiting";
         }
 
-        [Header("📊 Genel İstatistikler")]
-        [Tooltip("Tüm gruplardan toplam öldürülen düşman sayısı.")]
+        [Header("🎒 Sistem")]
+        // [DÜZELTME 1] Türü 'InventoryVisible' değil 'Inventory' yaptık.
+        [SerializeField] private Inventory _playerInventory;
+        [SerializeField] private bool _autoFindPlayer = true;
+
+        [Header("📊 İstatistik")]
         [SerializeField] private int _totalGlobalKills = 0;
 
-        [Header("📋 Spawn Ayarları")]
-        [Tooltip("Buraya istediğin kadar farklı düşman kuralı ekleyebilirsin.")]
+        [Header("📋 Spawn Listesi")]
         [SerializeField] private List<SpawnWaveSettings> _spawnList;
-
-        [Header("📏 Alan Ayarları")]
         [SerializeField] private Vector3 _spawnAreaSize = new Vector3(10, 0, 10);
 
-        // --- POOL SİSTEMİ ---
         private Dictionary<string, Queue<EnemyBehaviorController>> _poolDictionary = new Dictionary<string, Queue<EnemyBehaviorController>>();
+        private bool _isApplicationQuitting = false;
 
         private void Start()
         {
+            if (_autoFindPlayer)
+            {
+                FindPlayerInventory();
+            }
+
             if (_spawnList != null)
             {
-                // Her ayar grubu için ayrı bir "Yönetici Coroutine" başlat
                 foreach (var settings in _spawnList)
                 {
                     if (settings.EnemyType != null)
-                    {
                         StartCoroutine(ProcessWaveLoop(settings));
-                    }
                 }
             }
         }
 
-        /// <summary>
-        /// [YENİ] Sonsuz döngü mantığı: Bekle -> Doğur -> Ölmesini Bekle -> Başa Dön
-        /// </summary>
+        // [DÜZELTME 2] En doğru envanteri bulma algoritması
+        private void FindPlayerInventory()
+        {
+            // Adım 1: Gerçek kontrolcüyü (Hareket eden objeyi) bul
+            var realPlayerController = FindObjectOfType<PlayerCannonController>();
+            
+            if (realPlayerController != null)
+            {
+                // Önce kontrolcünün olduğu objeye bak (En garantisi budur)
+                _playerInventory = realPlayerController.GetComponent<Inventory>();
+
+                // Eğer orada yoksa, hemen altındaki çocuklara bak (Visuals içinde olabilir)
+                if (_playerInventory == null)
+                    _playerInventory = realPlayerController.GetComponentInChildren<Inventory>();
+
+                // Eğer hala yoksa, Ebeveynine bak (Bazen Root'ta olur)
+                if (_playerInventory == null)
+                    _playerInventory = realPlayerController.GetComponentInParent<Inventory>();
+
+                if (_playerInventory != null)
+                {
+                    Debug.Log($"✅ Spawner: Gerçek Envanter bulundu: {_playerInventory.name}");
+                    return;
+                }
+            }
+
+            // Eğer kontrolcü yoksa (Test sahnesi vb.) Tag ile dene
+            if (_playerInventory == null)
+            {
+                GameObject tagObj = GameObject.FindGameObjectWithTag("Player");
+                if (tagObj != null) _playerInventory = tagObj.GetComponentInChildren<Inventory>();
+            }
+
+            // Bulamazsa tekrar dene
+            if (_playerInventory == null) StartCoroutine(RetryFindPlayer());
+        }
+
+        private IEnumerator RetryFindPlayer()
+        {
+            yield return new WaitForSeconds(1f);
+            FindPlayerInventory();
+        }
+
+        private void OnApplicationQuit() => _isApplicationQuitting = true;
+
         private IEnumerator ProcessWaveLoop(SpawnWaveSettings wave)
         {
-            // Sonsuz döngü
             while (true)
             {
-                // 1. Bekleme Aşaması
+                if (_isApplicationQuitting) yield break;
+
                 wave.CurrentStatus = $"Waiting ({wave.StartDelay}s)...";
                 yield return new WaitForSeconds(wave.StartDelay);
 
-                // 2. Doğurma Aşaması
                 wave.CurrentStatus = "Spawning...";
                 int spawnedCount = 0;
                 var waitInterval = new WaitForSeconds(wave.SpawnInterval);
 
                 while (spawnedCount < wave.SpawnCount)
                 {
+                    if (_isApplicationQuitting) yield break;
                     SpawnEnemyForWave(wave);
                     spawnedCount++;
                     yield return waitInterval;
                 }
 
-                // 3. Savaş Aşaması (Hepsi ölene kadar bekle)
                 wave.CurrentStatus = "Battle in Progress...";
-                
-                // ActiveEnemies 0 olana kadar her frame bekle
                 while (wave.ActiveEnemies > 0)
                 {
+                    if (_isApplicationQuitting) yield break;
                     yield return null; 
                 }
 
-                // 4. Bitiş ve Tekrar
                 wave.CurrentStatus = "Wave Cleared! Restarting...";
-                // Döngü başa döner ve tekrar StartDelay kadar bekler
             }
         }
 
         private void SpawnEnemyForWave(SpawnWaveSettings wave)
         {
+            if (_isApplicationQuitting) return;
+
             EnemyBehaviorController enemy = GetFromPool(wave.EnemyType);
             if (enemy == null) return;
 
-            // Rastgele konum
             Vector3 randomPos = GetRandomPosition();
             enemy.transform.position = randomPos;
             enemy.transform.rotation = Quaternion.identity;
-
-            // Düşmanı başlat
+            
             enemy.InitializeEnemy(wave.EnemyType);
-
-            // [SAYAÇ GÜNCELLEME]
             wave.ActiveEnemies++;
 
-            // [ÖZEL CALLBACK] Düşman öldüğünde bu fonksiyon çalışacak
             enemy.OnReturnToPool = (deadEnemy) => 
             {
-                // 1. Standart havuz işlemi (Objeyi kapat ve sakla)
-                ReturnToPool(deadEnemy);
+                if (_isApplicationQuitting) return;
 
-                // 2. Sayaçları güncelle
-                wave.ActiveEnemies--;
-                wave.KillCount++;
-                _totalGlobalKills++; // Genel sayacı artır
+                // Referans kontrolü (Kaybolduysa tekrar bul)
+                if (_playerInventory == null && _autoFindPlayer) FindPlayerInventory();
+
+                TryDropLoot(deadEnemy, wave.EnemyType);
+                ReturnToPool(deadEnemy);
+                
+                if (wave != null) { wave.ActiveEnemies--; wave.KillCount++; }
+                _totalGlobalKills++; 
             };
+        }
+
+        private void TryDropLoot(EnemyBehaviorController enemy, EnemyDefinition data)
+        {
+            if (_isApplicationQuitting || _playerInventory == null || data.DropItem == null) return;
+            
+            // [DÜZELTME 3] Inventory sınıfının kendi CanAdd kontrolünü kullan
+            if (!_playerInventory.CanAdd(data.DropItem)) return;
+
+            var item = data.DropItem.Pool.Get();
+            if (item != null)
+            {
+                item.transform.position = enemy.transform.position;
+                item.gameObject.SetActive(true);
+                item.transform.SetParent(null); 
+                
+                // [DÜZELTME 4] Inventory.Add metodu, Visible/Invisible ayrımını kendi yapar
+                _playerInventory.Add(item);
+            }
         }
 
         private Vector3 GetRandomPosition()
@@ -140,14 +189,12 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             return transform.position + new Vector3(x, 0, z);
         }
 
-        // --- HAVUZ YÖNETİMİ ---
         private EnemyBehaviorController GetFromPool(EnemyDefinition data)
         {
             if (data == null || data.EnemyPrefab == null) return null;
             string key = data.name;
 
-            if (!_poolDictionary.ContainsKey(key))
-                _poolDictionary[key] = new Queue<EnemyBehaviorController>();
+            if (!_poolDictionary.ContainsKey(key)) _poolDictionary[key] = new Queue<EnemyBehaviorController>();
 
             if (_poolDictionary[key].Count > 0)
             {
@@ -170,15 +217,10 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             if (stats != null && stats.Definition != null)
             {
                 string key = stats.Definition.name;
-                if (!_poolDictionary.ContainsKey(key))
-                    _poolDictionary[key] = new Queue<EnemyBehaviorController>();
-
+                if (!_poolDictionary.ContainsKey(key)) _poolDictionary[key] = new Queue<EnemyBehaviorController>();
                 _poolDictionary[key].Enqueue(enemy);
             }
-            else
-            {
-                Destroy(enemy.gameObject);
-            }
+            else Destroy(enemy.gameObject);
         }
 
         private void OnDrawGizmos()
