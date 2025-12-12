@@ -14,9 +14,9 @@ namespace IndianOceanAssets.Engine2_5D.Managers
 
         [Header("↕️ Dikey Sınır Ayarları")]
         [Tooltip("Oyuncu Lokomotifin (Kameranın) ne kadar gerisinde kalabilir?")]
-        [SerializeField] private float _maxLagDistance = 6.0f;
+        [SerializeField] private float _maxLagDistance = 10.0f; // Varsayılanı artırdım ki başlangıçta hemen çekmesin
 
-        [Tooltip("İleriye gidişi sınırlayalım mı? (Kutuyu işaretlersen oyuncu kamerayı geçemez)")]
+        [Tooltip("İleriye gidişi sınırlayalım mı?")]
         [SerializeField] private bool _limitForwardMovement = true;
 
         [Tooltip("Eğer sınır açıksa: Oyuncu Lokomotifin ne kadar önüne geçebilir?")]
@@ -52,18 +52,16 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             if (_dollyTransform == null)
             {
                 Debug.LogError("❌ Hata: Runner_Dolly atanmamış!");
+                // Acil durum: Dolly yoksa mecburen oyuncunun olduğu yerde yarat
                 GameObject tempDolly = new GameObject("Temp_Dolly");
                 if (_playerTransform != null) tempDolly.transform.position = _playerTransform.position;
                 _dollyTransform = tempDolly.transform;
             }
-            else
-            {
-                if (_playerTransform != null)
-                {
-                    Vector3 startPos = _playerTransform.position;
-                    _dollyTransform.position = new Vector3(startPos.x, startPos.y, startPos.z);
-                }
-            }
+            
+            // [DEĞİŞİKLİK BURADA]
+            // Eskiden burada "_dollyTransform.position = _playerTransform.position" yazıyordu.
+            // O satırı SİLDİM. Artık Dolly, sen sahneye nereye koyduysan oradan başlar.
+            // Böylece oyuncuyu kameranın altına (gerisine) koyduğun ayar bozulmaz.
         }
 
         private void Update()
@@ -81,24 +79,18 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             Vector3 playerPos = _playerTransform.position;
             Vector3 dollyPos = _dollyTransform.position;
 
-            // --- 1. SAĞ / SOL SINIRI (X Ekseni) ---
+            // --- 1. SAĞ / SOL SINIRI ---
             float minX = dollyPos.x - _xBoundLimit;
             float maxX = dollyPos.x + _xBoundLimit;
             playerPos.x = Mathf.Clamp(playerPos.x, minX, maxX);
 
-            // --- 2. GERİ VE İLERİ SINIRI (Z Ekseni) ---
+            // --- 2. GERİ VE İLERİ SINIRI ---
             
-            // En geri gidebileceği nokta (Kamera alt sınırı)
             float minZ = dollyPos.z - _maxLagDistance;
-
-            // En ileri gidebileceği nokta (Kamera üst sınırı)
-            // Eğer sınırlama kapalıysa (+Sonsuz), açıksa (_maxForwardDistance) kullan.
             float maxZ = _limitForwardMovement ? (dollyPos.z + _maxForwardDistance) : Mathf.Infinity;
 
-            // Oyuncuyu bu iki Z değeri arasına hapsediyoruz (Kelepçeleme)
             playerPos.z = Mathf.Clamp(playerPos.z, minZ, maxZ);
 
-            // Pozisyonu uygula
             _playerTransform.position = playerPos;
         }
     }
