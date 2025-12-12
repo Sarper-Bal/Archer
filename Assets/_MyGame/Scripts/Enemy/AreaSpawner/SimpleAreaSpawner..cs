@@ -54,6 +54,9 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
 
         private void FindPlayerInventory()
         {
+            // Eğer obje kapalıysa (Sahne geçişi vb.) hiç arama yapma
+            if (!gameObject.activeInHierarchy) return;
+
             var realPlayerController = FindObjectOfType<PlayerCannonController>();
             if (realPlayerController != null)
             {
@@ -70,7 +73,11 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
                 if (tagObj != null) _playerInventory = tagObj.GetComponentInChildren<Inventory>();
             }
 
-            if (_playerInventory == null) StartCoroutine(RetryFindPlayer());
+            // Tekrar deneme rutini (Sadece obje açıksa başlat)
+            if (_playerInventory == null && gameObject.activeInHierarchy) 
+            {
+                StartCoroutine(RetryFindPlayer());
+            }
         }
 
         private IEnumerator RetryFindPlayer()
@@ -130,13 +137,15 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             // Düşman ölünce çalışacak Callback
             enemy.OnReturnToPool = (deadEnemy) => 
             {
-                if (_isApplicationQuitting) return;
+                // [HATA DÜZELTME]
+                // 1. Oyun kapanıyorsa çık.
+                // 2. Sahne değişiyorsa ve bu Spawner kapandıysa (activeInHierarchy == false), sakın işlem yapma!
+                if (_isApplicationQuitting || !gameObject.activeInHierarchy) return;
 
+                // Spawner aktifse oyuncuyu aramaya devam et
                 if (_playerInventory == null && _autoFindPlayer) FindPlayerInventory();
 
-                // [KRİTİK DÜZELTME] Ganimet verilip verilmeyeceğini kontrol et
                 CheckAndDropLoot(deadEnemy, wave.EnemyType);
-
                 ReturnToPool(deadEnemy);
                 
                 if (wave != null) { wave.ActiveEnemies--; wave.KillCount++; }
@@ -144,17 +153,12 @@ namespace IndianOceanAssets.Engine2_5D.Spawners
             };
         }
 
-        // [YENİ] Kontrol Mekanizması
         private void CheckAndDropLoot(EnemyBehaviorController enemy, EnemyDefinition data)
         {
-            if (_isApplicationQuitting) return;
+            if (_isApplicationQuitting || !gameObject.activeInHierarchy) return;
             
-            // Eğer düşman öldüğünde "Benim ganimetim alındı" (LootDropped == true) diyorsa,
-            // Demek ki Kule onu öldürmüş ve ganimetini almıştır. Biz oyuncuya vermiyoruz.
             if (enemy.LootDropped) return; 
 
-            // Eğer alınmadıysa, demek ki Oyuncu öldürdü (veya başka bir sebeple öldü).
-            // O zaman Oyuncunun çantasına yolla.
             TryDropLootToPlayer(enemy, data);
         }
 
