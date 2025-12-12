@@ -2904,7 +2904,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.SceneTravelManager
   _loadingScreen: {fileID: 0}
-  _minWaitDuration: 0
+  _minWaitDuration: 0.1
   _testTargetSceneName: Leval1
 --- !u!1 &799869968
 GameObject:

@@ -2,7 +2,9 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using DG.Tweening; 
-using ArcadeBridge.ArcadeIdleEngine.Booting; // LoadingScreenTween için
+
+// Namespace satırlarını sildik. Artık script bağımlılığı yok.
+// Sadece temel Unity ve DOTween kütüphaneleri yeterli.
 
 namespace IndianOceanAssets.Engine2_5D.Managers
 {
@@ -11,10 +13,10 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         public static SceneTravelManager Instance;
 
         [Header("📺 Görsel Ayarlar")]
-        [Tooltip("Loading Screen Canvas (üzerinde LoadingScreenTween olan obje).")]
-        [SerializeField] private LoadingScreenTween _loadingScreen; 
+        [Tooltip("Loading Screen Canvas'ının kendisini (GameObject olarak) buraya sürükle.")]
+        [SerializeField] private GameObject _loadingScreenObject; // Script değil, düz GameObject istiyoruz.
         
-        [Tooltip("Animasyonun görülmesi için minimum bekleme süresi.")]
+        [Tooltip("Yükleme ekranında en az ne kadar beklesin?")]
         [SerializeField] private float _minWaitDuration = 2.0f;
 
         [Header("🛠️ Test Ayarları")]
@@ -24,15 +26,14 @@ namespace IndianOceanAssets.Engine2_5D.Managers
 
         private void Awake()
         {
-            // Singleton: Sahne değişse bile bu obje yok olmasın.
             if (Instance == null)
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 
-                // Başlangıçta loading ekranını gizle
-                if (_loadingScreen != null) 
-                    _loadingScreen.gameObject.SetActive(false);
+                // Başlangıçta loading objesini gizle
+                if (_loadingScreenObject != null) 
+                    _loadingScreenObject.SetActive(false);
             }
             else
             {
@@ -40,13 +41,12 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             }
         }
 
-        // Sağ tık testi için
         [ContextMenu("🚀 Test Travel (Inspector)")]
         public void TestTravel()
         {
             if (string.IsNullOrEmpty(_testTargetSceneName))
             {
-                Debug.LogError("❌ Hata: Sahne adı boş! Inspector'dan doldur.");
+                Debug.LogError("❌ Hata: Sahne adı boş!");
                 return;
             }
             LoadScene(_testTargetSceneName);
@@ -63,42 +63,48 @@ namespace IndianOceanAssets.Engine2_5D.Managers
             _isTraveling = true;
             Debug.Log($"🔄 Sahne geçişi başlıyor: {sceneName}");
 
-            // 1. PERDEYİ KAPAT (Loading Ekranını Aç)
-            if (_loadingScreen != null)
+            // 1. PERDEYİ AÇ (Loading Ekranı)
+            // Sadece objeyi açıyoruz. Üzerinde script varsa kendi kendine çalışır, bizi ilgilendirmez.
+            if (_loadingScreenObject != null)
             {
-                _loadingScreen.gameObject.SetActive(true);
+                _loadingScreenObject.SetActive(true);
             }
             
-            // Animasyonun başlaması için kısa bir bekleme (Görsel glitch olmaması için)
-            yield return new WaitForSeconds(0.5f);
+            // Görselin ekrana gelmesi için 1 kare bekle
+            yield return null; 
 
-            // 2. RAM TEMİZLİĞİ (Garbage Collection)
-            // Yeni sahneye geçmeden önce eski sahnenin artıklarını temizle
+            // 2. DOTWEEN TEMİZLİĞİ (HATA ÇÖZÜMÜ)
+            // Sahne değişmeden önce çalışan tüm animasyonları (düşmanlar, paralar vb.) öldür.
+            // Bunu yapmazsak "Missing Target" hatası alırız.
+            DOTween.KillAll();
+
+            // 3. RAM TEMİZLİĞİ
             System.GC.Collect();
             yield return Resources.UnloadUnusedAssets();
 
-            // 3. ASENKRON YÜKLEME (Donmadan Yükle)
+            // 4. ASENKRON YÜKLEME
             AsyncOperation operation = SceneManager.LoadSceneAsync(sceneName);
-            
-            // Otomatik geçişi durdur ki biz isteyince geçsin (Opsiyonel ama daha güvenli)
             operation.allowSceneActivation = false;
 
+            // Yükleme sırasında bekle
             while (!operation.isDone)
             {
-                // Yükleme %90'a geldiğinde bitmiş sayılır
+                // Yükleme %90'a geldiğinde ve minimum süre dolduğunda
                 if (operation.progress >= 0.9f)
                 {
-                    // Minimum bekleme süresi doldu mu? Dolduysa sahneyi aktif et.
                     yield return new WaitForSeconds(_minWaitDuration);
+                    
+                    // Son kez temizlik yapıp geçişe izin ver
+                    DOTween.KillAll(); 
                     operation.allowSceneActivation = true;
                 }
                 yield return null;
             }
 
-            // 4. PERDEYİ AÇ (Loading Ekranını Kapat)
-            if (_loadingScreen != null)
+            // 5. PERDEYİ KAPAT
+            if (_loadingScreenObject != null)
             {
-                _loadingScreen.gameObject.SetActive(false);
+                _loadingScreenObject.SetActive(false);
             }
 
             _isTraveling = false;
