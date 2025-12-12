@@ -8,18 +8,22 @@ namespace IndianOceanAssets.Engine2_5D.Managers
         [Tooltip("Oyunun akış hızı.")]
         [SerializeField] private float _scrollSpeed = 5.0f;
 
-        [Header("🛡️ Sınır Ayarları")]
+        [Header("↔️ Yan Sınır Ayarları")]
         [Tooltip("Oyuncu merkezden sağa/sola en fazla kaç birim gidebilir?")]
         [SerializeField] private float _xBoundLimit = 4.5f;
 
-        [Tooltip("Oyuncu Lokomotifin ne kadar gerisinde kalabilir?")]
+        [Header("↕️ Dikey Sınır Ayarları")]
+        [Tooltip("Oyuncu Lokomotifin (Kameranın) ne kadar gerisinde kalabilir?")]
         [SerializeField] private float _maxLagDistance = 6.0f;
 
-        [Header("🔗 Zorunlu Bağlantılar")]
-        [Tooltip("Sahnede oluşturduğun boş 'Runner_Dolly' objesini buraya sürükle.")]
-        [SerializeField] private Transform _dollyTransform;
+        [Tooltip("İleriye gidişi sınırlayalım mı? (Kutuyu işaretlersen oyuncu kamerayı geçemez)")]
+        [SerializeField] private bool _limitForwardMovement = true;
 
-        [Tooltip("Eğer otomatik bulamazsa, oyuncuyu buraya elle sürükleyebilirsin.")]
+        [Tooltip("Eğer sınır açıksa: Oyuncu Lokomotifin ne kadar önüne geçebilir?")]
+        [SerializeField] private float _maxForwardDistance = 6.0f;
+
+        [Header("🔗 Zorunlu Bağlantılar")]
+        [SerializeField] private Transform _dollyTransform;
         [SerializeField] private Transform _playerTransform;
 
         private void Start()
@@ -29,37 +33,31 @@ namespace IndianOceanAssets.Engine2_5D.Managers
 
         private void InitializeSystem()
         {
-            // 1. OYUNCUYU BUL (ETİKET İLE)
-            // Eğer Inspector'dan elle atamadıysan, otomatik bulmayı dene.
+            // 1. OYUNCUYU BUL
             if (_playerTransform == null)
             {
-                // "Player" etiketli objeyi bulur. (Script fark etmeksizin)
                 GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-                
                 if (playerObj != null)
                 {
                     _playerTransform = playerObj.transform;
-                    Debug.Log("✅ Oyuncu bulundu: " + _playerTransform.name);
                 }
                 else
                 {
-                    Debug.LogError("❌ HATA: Sahnede 'Player' etiketli (Tag) bir obje yok! Lütfen karakterinin Tag'ini 'Player' yap.");
-                    return; // Oyuncu yoksa kodun geri kalanı çalışmaz.
+                    Debug.LogError("❌ HATA: 'Player' etiketli obje bulunamadı!");
+                    return; 
                 }
             }
 
             // 2. DOLLY KONTROLÜ
             if (_dollyTransform == null)
             {
-                Debug.LogError("❌ Hata: Dolly (Lokomotif) objesi atanmamış! Inspector'dan atamalısın.");
-                // Hata almamak için geçici oluştur
+                Debug.LogError("❌ Hata: Runner_Dolly atanmamış!");
                 GameObject tempDolly = new GameObject("Temp_Dolly");
                 if (_playerTransform != null) tempDolly.transform.position = _playerTransform.position;
                 _dollyTransform = tempDolly.transform;
             }
             else
             {
-                // Dolly'yi oyuncunun hizasına getir
                 if (_playerTransform != null)
                 {
                     Vector3 startPos = _playerTransform.position;
@@ -78,29 +76,29 @@ namespace IndianOceanAssets.Engine2_5D.Managers
 
         private void LateUpdate()
         {
-            // Eğer oyuncu bulunamadıysa burası çalışmaz.
             if (_playerTransform == null || _dollyTransform == null) return;
 
             Vector3 playerPos = _playerTransform.position;
             Vector3 dollyPos = _dollyTransform.position;
 
-            // B. SAĞ / SOL SINIRI (CLAMP)
-            // Dolly'nin X konumuna göre sağa ve sola limit koyuyoruz.
+            // --- 1. SAĞ / SOL SINIRI (X Ekseni) ---
             float minX = dollyPos.x - _xBoundLimit;
             float maxX = dollyPos.x + _xBoundLimit;
-            
             playerPos.x = Mathf.Clamp(playerPos.x, minX, maxX);
 
-            // C. ARKA SINIR (PUSH)
-            // Oyuncu Dolly'den çok geride kalırsa (Kamera giderse), oyuncuyu ileri çek.
-            float minZ = dollyPos.z - _maxLagDistance;
+            // --- 2. GERİ VE İLERİ SINIRI (Z Ekseni) ---
             
-            if (playerPos.z < minZ)
-            {
-                playerPos.z = minZ; 
-            }
+            // En geri gidebileceği nokta (Kamera alt sınırı)
+            float minZ = dollyPos.z - _maxLagDistance;
 
-            // Hesaplanan yeni pozisyonu oyuncuya uygula
+            // En ileri gidebileceği nokta (Kamera üst sınırı)
+            // Eğer sınırlama kapalıysa (+Sonsuz), açıksa (_maxForwardDistance) kullan.
+            float maxZ = _limitForwardMovement ? (dollyPos.z + _maxForwardDistance) : Mathf.Infinity;
+
+            // Oyuncuyu bu iki Z değeri arasına hapsediyoruz (Kelepçeleme)
+            playerPos.z = Mathf.Clamp(playerPos.z, minZ, maxZ);
+
+            // Pozisyonu uygula
             _playerTransform.position = playerPos;
         }
     }
