@@ -1144,7 +1144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.Managers.RoadManager
   _roadPrefab: {fileID: 7587880958127151200, guid: f5f0c9260dfbd4c09a6a9e700195b71a,
     type: 3}
-  _poolSize: 2
+  _poolSize: 7
   _dollyTransform: {fileID: 1390588364}
 --- !u!4 &1664456394
 Transform:
@@ -1771,6 +1771,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_TagString
       value: Enemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 7587880958127151200, guid: f5f0c9260dfbd4c09a6a9e700195b71a,
+        type: 3}
+      propertyPath: _obstacleRows.Array.data[0].ShuffleThisRow
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7909475884053569385, guid: f5f0c9260dfbd4c09a6a9e700195b71a,
         type: 3}

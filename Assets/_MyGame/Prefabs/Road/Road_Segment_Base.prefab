@@ -86,12 +86,16 @@ MonoBehaviour:
   _obstacleRows:
   - RowName: 1
     Columns:
-    - {fileID: 3145292875392056687}
-    - {fileID: 167960262857157200}
+    - ObstacleRef: {fileID: 3145292875392056687}
+      IsShuffleable: 0
+    - ObstacleRef: {fileID: 167960262857157200}
+      IsShuffleable: 1
   - RowName: 2
     Columns:
-    - {fileID: 6602016223836647869}
-    - {fileID: 9008460465505629217}
+    - ObstacleRef: {fileID: 6602016223836647869}
+      IsShuffleable: 1
+    - ObstacleRef: {fileID: 9008460465505629217}
+      IsShuffleable: 1
 --- !u!1 &2365709013626620353
 GameObject:
   m_ObjectHideFlags: 0
@@ -216,7 +220,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
-  AllowShuffle: 1
   OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &3182034642044713567
 GameObject:
@@ -342,7 +345,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
-  AllowShuffle: 1
   OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &4486943368160211150
 GameObject:
@@ -580,7 +582,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
-  AllowShuffle: 1
   OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &6549359218889640526
 GameObject:
@@ -706,7 +707,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
-  AllowShuffle: 1
   OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &8711611596700408287
 GameObject:

@@ -3,43 +3,42 @@ using System.Collections.Generic;
 
 namespace IndianOceanAssets.Engine2_5D.World
 {
+    // --- YENİ YAPI: TEKİL ENGEL KUTUSU ---
+    [System.Serializable]
+    public class ObstacleSlot
+    {
+        [Tooltip("Sahnedeki Engel Objesi")]
+        public SimpleObstacle ObstacleRef;
+
+        [Tooltip("✅ Eğer bunu işaretlersen, BU KÜP karıştırma havuzuna girer.")]
+        public bool IsShuffleable = false;
+    }
+
+    // --- SATIR YAPISI ---
     [System.Serializable]
     public class ObstacleRow
     {
         public string RowName = "Row";
-        public List<SimpleObstacle> Columns = new List<SimpleObstacle>();
+        // Artık direkt engel değil, 'Slot' listesi tutuyoruz
+        public List<ObstacleSlot> Columns = new List<ObstacleSlot>();
     }
 
+    // --- ANA SINIF ---
     public class RoadSegment : MonoBehaviour
     {
         [SerializeField] private Transform _connectPoint;
         [SerializeField] private List<ObstacleRow> _obstacleRows = new List<ObstacleRow>();
 
-        // Karıştırılacakların özel listesi (Optimizasyon için ayrı tutuyoruz)
         private List<SimpleObstacle> _shuffleableObstacles = new List<SimpleObstacle>();
 
         private void Awake()
         {
             if (_obstacleRows == null || _obstacleRows.Count == 0) BakeObstaclesToGrid();
-            
-            // Oyun başında karıştırılabilir olanları bul ve listeye al
-            CacheShuffleableObstacles();
         }
 
-        private void CacheShuffleableObstacles()
+        private void Start()
         {
-            _shuffleableObstacles.Clear();
-            // Tüm gridi gez, 'AllowShuffle' olanları bul
-            foreach (var row in _obstacleRows)
-            {
-                foreach (var obs in row.Columns)
-                {
-                    if (obs != null && obs.AllowShuffle)
-                    {
-                        _shuffleableObstacles.Add(obs);
-                    }
-                }
-            }
+            ResetObstacles();
         }
 
         public Vector3 GetEndPosition()
@@ -50,33 +49,54 @@ namespace IndianOceanAssets.Engine2_5D.World
 
         public void ResetObstacles()
         {
-            // 1. Önce Karıştırma İşlemini Yap (Eğer listede eleman varsa)
+            // 1. Karıştırılacakları Bul
+            IdentifyShuffleTargets();
+
+            // 2. Karıştır
             if (_shuffleableObstacles.Count > 1)
             {
                 ShufflePositions();
             }
 
-            // 2. Sonra Hepsini Aç
+            // 3. Hepsini Aç
             foreach (var row in _obstacleRows)
             {
-                foreach (var obstacle in row.Columns)
+                foreach (var slot in row.Columns)
                 {
-                    if (obstacle != null) obstacle.gameObject.SetActive(true);
+                    if (slot.ObstacleRef != null) 
+                        slot.ObstacleRef.gameObject.SetActive(true);
                 }
             }
         }
 
-        // --- POZİSYON KARIŞTIRMA ALGORİTMASI ---
+        // --- MİKRO KONTROL SEÇİMİ ---
+        private void IdentifyShuffleTargets()
+        {
+            _shuffleableObstacles.Clear();
+
+            foreach (var row in _obstacleRows)
+            {
+                foreach (var slot in row.Columns)
+                {
+                    // Artık satıra değil, TEK TEK slotlara bakıyoruz.
+                    // Eğer sen o küpün yanındaki kutuyu işaretlediysen havuza girer.
+                    if (slot.ObstacleRef != null && slot.IsShuffleable)
+                    {
+                        _shuffleableObstacles.Add(slot.ObstacleRef);
+                    }
+                }
+            }
+        }
+
         private void ShufflePositions()
         {
-            // A. Mevcut pozisyonların kopyasını al
             List<Vector3> positions = new List<Vector3>();
             foreach (var obs in _shuffleableObstacles)
             {
-                positions.Add(obs.transform.localPosition); // Yerel pozisyonu al
+                positions.Add(obs.OriginalLocalPosition); 
             }
 
-            // B. Pozisyon listesini karıştır (Fisher-Yates Algoritması)
+            // Fisher-Yates Shuffle
             for (int i = 0; i < positions.Count; i++)
             {
                 Vector3 temp = positions[i];
@@ -85,14 +105,13 @@ namespace IndianOceanAssets.Engine2_5D.World
                 positions[randomIndex] = temp;
             }
 
-            // C. Karışmış pozisyonları küplere geri yükle
             for (int i = 0; i < _shuffleableObstacles.Count; i++)
             {
                 _shuffleableObstacles[i].transform.localPosition = positions[i];
             }
         }
 
-        // --- GRID BAKE KODLARI (Öncekiyle Aynı) ---
+        // --- GRID BAKE (GÜNCELLENDİ) ---
         [ContextMenu("⚡ Grid Sistemini Oluştur (Bake)")]
         private void BakeObstaclesToGrid()
         {
@@ -101,6 +120,7 @@ namespace IndianOceanAssets.Engine2_5D.World
             GetComponentsInChildren(true, allObstacles);
             if (allObstacles.Count == 0) return;
 
+            // Z'ye göre sırala
             allObstacles.Sort((a, b) => a.transform.localPosition.z.CompareTo(b.transform.localPosition.z));
 
             float rowThreshold = 0.5f;
@@ -119,16 +139,25 @@ namespace IndianOceanAssets.Engine2_5D.World
             }
             if (currentRowList.Count > 0) AddRowToGrid(currentRowList);
             
-            // Grid oluştuktan sonra shuffle listesini de güncelle (Editörde görmek istersen)
-            CacheShuffleableObstacles();
+            Debug.Log($"✅ Grid Güncellendi! Artık her küpü tek tek seçebilirsin.");
         }
 
         private void AddRowToGrid(List<SimpleObstacle> unsortedRow)
         {
             unsortedRow.Sort((a, b) => a.transform.localPosition.x.CompareTo(b.transform.localPosition.x));
+            
             ObstacleRow newRow = new ObstacleRow();
             newRow.RowName = $"Row {_obstacleRows.Count}";
-            newRow.Columns = new List<SimpleObstacle>(unsortedRow);
+            
+            // Listeyi 'ObstacleSlot' yapısına çevirerek ekle
+            foreach(var obs in unsortedRow)
+            {
+                ObstacleSlot newSlot = new ObstacleSlot();
+                newSlot.ObstacleRef = obs;
+                newSlot.IsShuffleable = false; // Varsayılan kapalı
+                newRow.Columns.Add(newSlot);
+            }
+            
             _obstacleRows.Add(newRow);
         }
     }
