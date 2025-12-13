@@ -440,11 +440,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f52efb3c1d18f4452a8c2a42aab1accb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.RunnerGameController
-  _scrollSpeed: 1
+  _scrollSpeed: 4
   _sideMovementSensitivity: 15
   _forwardMovementSensitivity: 10
-  _xBoundLimit: 5
-  _maxLagDistance: 11
+  _xBoundLimit: 3
+  _maxLagDistance: 9
   _limitForwardMovement: 1
   _maxForwardDistance: 0
   _dollyTransform: {fileID: 1390588364}
@@ -1903,7 +1903,7 @@ PrefabInstance:
     - target: {fileID: 6790882568947784287, guid: 5f99486e7cd8b4bab9962635825fc22c,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1.7800007
+      value: 3.38
       objectReference: {fileID: 0}
     - target: {fileID: 6790882568947784287, guid: 5f99486e7cd8b4bab9962635825fc22c,
         type: 3}
