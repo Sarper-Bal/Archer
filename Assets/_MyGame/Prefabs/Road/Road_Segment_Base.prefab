@@ -105,9 +105,9 @@ GameObject:
   - component: {fileID: 8253787474142610972}
   - component: {fileID: 811206838419462714}
   - component: {fileID: 6602016223836647869}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Obstacle
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -216,6 +216,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
+  AllowShuffle: 1
+  OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &3182034642044713567
 GameObject:
   m_ObjectHideFlags: 0
@@ -229,9 +231,9 @@ GameObject:
   - component: {fileID: 1812690325925617271}
   - component: {fileID: 802484691990255191}
   - component: {fileID: 9008460465505629217}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Obstacle (3)
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -340,6 +342,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
+  AllowShuffle: 1
+  OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &4486943368160211150
 GameObject:
   m_ObjectHideFlags: 0
@@ -465,9 +469,9 @@ GameObject:
   - component: {fileID: 7176557775267441288}
   - component: {fileID: 2516254031016837539}
   - component: {fileID: 167960262857157200}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Obstacle (2)
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -576,6 +580,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
+  AllowShuffle: 1
+  OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &6549359218889640526
 GameObject:
   m_ObjectHideFlags: 0
@@ -589,9 +595,9 @@ GameObject:
   - component: {fileID: 5447031173666906622}
   - component: {fileID: 6457062394239151394}
   - component: {fileID: 3145292875392056687}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Obstacle (1)
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -644,7 +650,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: ae299c9ad5a13487691482da930a55c0, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -700,6 +706,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da681cb9cc92f451aabe29dd361e7c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndianOceanAssets.Engine2_5D.World.SimpleObstacle
+  AllowShuffle: 1
+  OriginalLocalPosition: {x: 0, y: 0, z: 0}
 --- !u!1 &8711611596700408287
 GameObject:
   m_ObjectHideFlags: 0
