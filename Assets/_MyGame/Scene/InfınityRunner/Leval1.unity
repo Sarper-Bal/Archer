@@ -440,11 +440,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f52efb3c1d18f4452a8c2a42aab1accb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArcadeBridge.RunnerGameController
-  _scrollSpeed: 5
+  _scrollSpeed: 3
   _xBoundLimit: 2.8
   _maxLagDistance: 11
   _limitForwardMovement: 1
-  _maxForwardDistance: 1
+  _maxForwardDistance: 3
   _dollyTransform: {fileID: 1390588364}
   _playerTransform: {fileID: 1160945730}
 --- !u!4 &486798461

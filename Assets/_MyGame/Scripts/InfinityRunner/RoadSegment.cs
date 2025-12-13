@@ -1,25 +1,33 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq; // Sıralama işlemleri için gerekli
 
 namespace IndianOceanAssets.Engine2_5D.World
 {
+    // --- YARDIMCI SINIF: SATIR ---
+    [System.Serializable] // Inspector'da görünmesi için şart
+    public class ObstacleRow
+    {
+        public string RowName = "Row"; // Debug için isim
+        public List<SimpleObstacle> Columns = new List<SimpleObstacle>();
+    }
+
+    // --- ANA SINIF ---
     public class RoadSegment : MonoBehaviour
     {
-        [Tooltip("Bu yol parçasının bittiği nokta.")]
+        [Tooltip("Yolun bittiği nokta.")]
         [SerializeField] private Transform _connectPoint;
 
-        [Header("🔴 Engel Yönetimi")]
-        [Tooltip("Yol üzerindeki engellerin listesi. Oyun başlayınca otomatik dolar.")]
-        [SerializeField] private List<SimpleObstacle> _obstacles = new List<SimpleObstacle>();
+        [Header("🧩 Akıllı Grid Sistemi")]
+        [Tooltip("Yol üzerindeki engellerin satır satır listesi.")]
+        [SerializeField] private List<ObstacleRow> _obstacleRows = new List<ObstacleRow>();
 
         private void Awake()
         {
-            // OYUN BAŞLARKEN OTOMATİK TARAMA
-            // Eğer listeyi elle doldurmadıysan, kod kendisi bulur.
-            if (_obstacles.Count == 0)
+            // Eğer liste boşsa, oyun başında bir kereye mahsus otomatik tara
+            if (_obstacleRows == null || _obstacleRows.Count == 0)
             {
-                // Kendisinin ve altındaki tüm objelerin içindeki SimpleObstacle scriptlerini bulur
-                GetComponentsInChildren(true, _obstacles);
+                BakeObstaclesToGrid();
             }
         }
 
@@ -30,30 +38,78 @@ namespace IndianOceanAssets.Engine2_5D.World
             return _connectPoint.position;
         }
 
-        /// <summary>
-        /// Yol en başa taşındığında çağrılır. Tüm engelleri sıfırlar.
-        /// </summary>
         public void ResetObstacles()
         {
-            // Şimdilik test için HEPSİNİ açıyoruz.
-            // İleride buraya "Rastgele %50'sini aç" gibi mantıklar ekleyeceğiz.
-            for (int i = 0; i < _obstacles.Count; i++)
+            // Grid içindeki tüm satırları ve sütunları gez
+            foreach (var row in _obstacleRows)
             {
-                if (_obstacles[i] != null)
+                foreach (var obstacle in row.Columns)
                 {
-                    _obstacles[i].gameObject.SetActive(true);
-                    // İleride: _obstacles[i].ResetHealth();
+                    if (obstacle != null)
+                    {
+                        obstacle.gameObject.SetActive(true);
+                        // İleride buraya mantık ekleyeceğiz:
+                        // if (row.Index == 2) obstacle.Zıpla();
+                    }
                 }
             }
         }
 
-        // Editörde kolaylık sağlamak için sağ tık menüsü
-        [ContextMenu("Engelleri Bul (Editör)")]
-        private void FindObstaclesInEditor()
+        // --- EDİTÖR İÇİN AKILLI SIRALAMA ALGORİTMASI ---
+        // Bu kod, dağınık duran küpleri Z (İleri) ve X (Yan) pozisyonlarına göre gruplar.
+        [ContextMenu("⚡ Grid Sistemini Oluştur (Bake)")]
+        private void BakeObstaclesToGrid()
         {
-            _obstacles.Clear();
-            GetComponentsInChildren(true, _obstacles);
-            Debug.Log($"✅ {_obstacles.Count} adet engel bulundu ve listeye eklendi!");
+            _obstacleRows.Clear();
+
+            // 1. Tüm çocuk engelleri bul
+            List<SimpleObstacle> allObstacles = new List<SimpleObstacle>();
+            GetComponentsInChildren(true, allObstacles);
+
+            if (allObstacles.Count == 0)
+            {
+                Debug.LogWarning("⚠️ Hiç engel (SimpleObstacle) bulunamadı!");
+                return;
+            }
+
+            // 2. Z Pozisyonuna (Derinlik) göre sırala (Yakından uzağa)
+            // Böylece Row 0 her zaman en yakındaki olur.
+            allObstacles.Sort((a, b) => a.transform.localPosition.z.CompareTo(b.transform.localPosition.z));
+
+            // 3. Gruplama (Z pozisyonları birbirine çok yakın olanları aynı satıra koy)
+            float rowThreshold = 0.5f; // Yarım metre hata payı bırakıyoruz
+            List<SimpleObstacle> currentRowList = new List<SimpleObstacle>();
+            float lastZ = allObstacles[0].transform.localPosition.z;
+
+            foreach (var obs in allObstacles)
+            {
+                // Eğer bu engelin Z'si, bir öncekinden çok farklıysa -> Yeni Satıra geç
+                if (Mathf.Abs(obs.transform.localPosition.z - lastZ) > rowThreshold)
+                {
+                    AddRowToGrid(currentRowList); // Önceki satırı kaydet
+                    currentRowList = new List<SimpleObstacle>(); // Yeni liste aç
+                    lastZ = obs.transform.localPosition.z; // Referansı güncelle
+                }
+                
+                currentRowList.Add(obs);
+            }
+            // Son kalan grubu da ekle
+            if (currentRowList.Count > 0) AddRowToGrid(currentRowList);
+
+            Debug.Log($"✅ Grid Oluşturuldu: {_obstacleRows.Count} Satır bulundu.");
+        }
+
+        // Yardımcı fonksiyon: Bir satırı kaydetmeden önce X'e göre (Soldan Sağa) sıralar
+        private void AddRowToGrid(List<SimpleObstacle> unsortedRow)
+        {
+            // Soldan Sağa sırala (X değeri küçükten büyüğe)
+            unsortedRow.Sort((a, b) => a.transform.localPosition.x.CompareTo(b.transform.localPosition.x));
+
+            ObstacleRow newRow = new ObstacleRow();
+            newRow.RowName = $"Row {_obstacleRows.Count}"; // İsim ver (Row 0, Row 1...)
+            newRow.Columns = new List<SimpleObstacle>(unsortedRow);
+            
+            _obstacleRows.Add(newRow);
         }
 
         private void OnDrawGizmos()
