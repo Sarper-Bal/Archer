@@ -87,15 +87,15 @@ MonoBehaviour:
   - RowName: 1
     Columns:
     - ObstacleRef: {fileID: 3145292875392056687}
-      IsShuffleable: 0
+      ShuffleGroupId: 1
     - ObstacleRef: {fileID: 167960262857157200}
-      IsShuffleable: 1
+      ShuffleGroupId: 1
   - RowName: 2
     Columns:
     - ObstacleRef: {fileID: 6602016223836647869}
-      IsShuffleable: 1
+      ShuffleGroupId: 1
     - ObstacleRef: {fileID: 9008460465505629217}
-      IsShuffleable: 1
+      ShuffleGroupId: 1
 --- !u!1 &2365709013626620353
 GameObject:
   m_ObjectHideFlags: 0

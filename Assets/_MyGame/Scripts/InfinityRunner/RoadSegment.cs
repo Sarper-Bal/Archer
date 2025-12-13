@@ -3,33 +3,32 @@ using System.Collections.Generic;
 
 namespace IndianOceanAssets.Engine2_5D.World
 {
-    // --- YENİ YAPI: TEKİL ENGEL KUTUSU ---
+    // --- YENİ YAPI: GRUP ID'Lİ SLOT ---
     [System.Serializable]
     public class ObstacleSlot
     {
-        [Tooltip("Sahnedeki Engel Objesi")]
         public SimpleObstacle ObstacleRef;
 
-        [Tooltip("✅ Eğer bunu işaretlersen, BU KÜP karıştırma havuzuna girer.")]
-        public bool IsShuffleable = false;
+        [Tooltip("0 = Sabit Durur.\n1 = Grup 1 ile karışır.\n2 = Grup 2 ile karışır...")]
+        public int ShuffleGroupId = 0; // Varsayılan 0 (Sabit)
     }
 
-    // --- SATIR YAPISI ---
     [System.Serializable]
     public class ObstacleRow
     {
         public string RowName = "Row";
-        // Artık direkt engel değil, 'Slot' listesi tutuyoruz
         public List<ObstacleSlot> Columns = new List<ObstacleSlot>();
     }
 
-    // --- ANA SINIF ---
     public class RoadSegment : MonoBehaviour
     {
         [SerializeField] private Transform _connectPoint;
         [SerializeField] private List<ObstacleRow> _obstacleRows = new List<ObstacleRow>();
 
-        private List<SimpleObstacle> _shuffleableObstacles = new List<SimpleObstacle>();
+        // Grupları ayırmak için Sözlük kullanıyoruz.
+        // Anahtar (int): Grup Numarası (1, 2, 3...)
+        // Değer (List): O gruba ait engeller
+        private Dictionary<int, List<SimpleObstacle>> _shuffleGroups = new Dictionary<int, List<SimpleObstacle>>();
 
         private void Awake()
         {
@@ -49,16 +48,16 @@ namespace IndianOceanAssets.Engine2_5D.World
 
         public void ResetObstacles()
         {
-            // 1. Karıştırılacakları Bul
-            IdentifyShuffleTargets();
+            // 1. Grupları Analiz Et ve Ayır
+            IdentifyShuffleGroups();
 
-            // 2. Karıştır
-            if (_shuffleableObstacles.Count > 1)
+            // 2. Her grubu kendi içinde karıştır
+            foreach (var groupID in _shuffleGroups.Keys)
             {
-                ShufflePositions();
+                ShuffleSpecificGroup(_shuffleGroups[groupID]);
             }
 
-            // 3. Hepsini Aç
+            // 3. Hepsini Görünür Yap
             foreach (var row in _obstacleRows)
             {
                 foreach (var slot in row.Columns)
@@ -69,34 +68,47 @@ namespace IndianOceanAssets.Engine2_5D.World
             }
         }
 
-        // --- MİKRO KONTROL SEÇİMİ ---
-        private void IdentifyShuffleTargets()
+        // --- GRUPLAMA MANTIĞI ---
+        private void IdentifyShuffleGroups()
         {
-            _shuffleableObstacles.Clear();
+            // Sözlüğü temizle
+            foreach (var list in _shuffleGroups.Values) list.Clear();
+            _shuffleGroups.Clear();
 
             foreach (var row in _obstacleRows)
             {
                 foreach (var slot in row.Columns)
                 {
-                    // Artık satıra değil, TEK TEK slotlara bakıyoruz.
-                    // Eğer sen o küpün yanındaki kutuyu işaretlediysen havuza girer.
-                    if (slot.ObstacleRef != null && slot.IsShuffleable)
+                    // Eğer ID 0'dan büyükse (yani bir gruba dahilse) ve obje varsa
+                    if (slot.ObstacleRef != null && slot.ShuffleGroupId > 0)
                     {
-                        _shuffleableObstacles.Add(slot.ObstacleRef);
+                        // Bu Grup ID'si sözlükte yoksa, yeni liste oluştur
+                        if (!_shuffleGroups.ContainsKey(slot.ShuffleGroupId))
+                        {
+                            _shuffleGroups[slot.ShuffleGroupId] = new List<SimpleObstacle>();
+                        }
+
+                        // Objeyi ilgili grubun listesine ekle
+                        _shuffleGroups[slot.ShuffleGroupId].Add(slot.ObstacleRef);
                     }
                 }
             }
         }
 
-        private void ShufflePositions()
+        // --- GRUP BAZLI KARIŞTIRMA ---
+        private void ShuffleSpecificGroup(List<SimpleObstacle> groupMembers)
         {
+            // Eğer grupta 1 veya daha az kişi varsa karıştırmaya gerek yok
+            if (groupMembers.Count <= 1) return;
+
+            // A. Orijinal pozisyonları topla
             List<Vector3> positions = new List<Vector3>();
-            foreach (var obs in _shuffleableObstacles)
+            foreach (var obs in groupMembers)
             {
                 positions.Add(obs.OriginalLocalPosition); 
             }
 
-            // Fisher-Yates Shuffle
+            // B. Pozisyonları karıştır (Fisher-Yates)
             for (int i = 0; i < positions.Count; i++)
             {
                 Vector3 temp = positions[i];
@@ -105,13 +117,14 @@ namespace IndianOceanAssets.Engine2_5D.World
                 positions[randomIndex] = temp;
             }
 
-            for (int i = 0; i < _shuffleableObstacles.Count; i++)
+            // C. Yeni pozisyonları uygula
+            for (int i = 0; i < groupMembers.Count; i++)
             {
-                _shuffleableObstacles[i].transform.localPosition = positions[i];
+                groupMembers[i].transform.localPosition = positions[i];
             }
         }
 
-        // --- GRID BAKE (GÜNCELLENDİ) ---
+        // --- GRID BAKE (AYNI KALDI, SADECE SLOT GÜNCELLENDİ) ---
         [ContextMenu("⚡ Grid Sistemini Oluştur (Bake)")]
         private void BakeObstaclesToGrid()
         {
@@ -120,7 +133,6 @@ namespace IndianOceanAssets.Engine2_5D.World
             GetComponentsInChildren(true, allObstacles);
             if (allObstacles.Count == 0) return;
 
-            // Z'ye göre sırala
             allObstacles.Sort((a, b) => a.transform.localPosition.z.CompareTo(b.transform.localPosition.z));
 
             float rowThreshold = 0.5f;
@@ -139,7 +151,7 @@ namespace IndianOceanAssets.Engine2_5D.World
             }
             if (currentRowList.Count > 0) AddRowToGrid(currentRowList);
             
-            Debug.Log($"✅ Grid Güncellendi! Artık her küpü tek tek seçebilirsin.");
+            Debug.Log($"✅ Grid Güncellendi! 'Shuffle Group Id' ile gruplama yapabilirsin.");
         }
 
         private void AddRowToGrid(List<SimpleObstacle> unsortedRow)
@@ -149,12 +161,11 @@ namespace IndianOceanAssets.Engine2_5D.World
             ObstacleRow newRow = new ObstacleRow();
             newRow.RowName = $"Row {_obstacleRows.Count}";
             
-            // Listeyi 'ObstacleSlot' yapısına çevirerek ekle
             foreach(var obs in unsortedRow)
             {
                 ObstacleSlot newSlot = new ObstacleSlot();
                 newSlot.ObstacleRef = obs;
-                newSlot.IsShuffleable = false; // Varsayılan kapalı
+                newSlot.ShuffleGroupId = 0; // Varsayılan 0 (Sabit)
                 newRow.Columns.Add(newSlot);
             }
             
